@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<title>RICOCHET</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/sling.css">
+<link rel="stylesheet" href="css/dial.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <header id="hud">
+      <div class="hud__cell">
+        <span class="hud__k">SCORE</span>
+        <span class="hud__v" id="v-score">0</span>
+      </div>
+      <div class="hud__cell">
+        <span class="hud__k">WAVE</span>
+        <span class="hud__v" id="v-wave">1</span>
+      </div>
+      <div class="hud__cell">
+        <span class="hud__k">TIME</span>
+        <span class="hud__v" id="v-time">60</span>
+      </div>
+      <div class="hud__cell">
+        <span class="hud__k">SHOTS</span>
+        <span class="hud__v" id="v-shots">10</span>
+      </div>
+      <div class="hud__cell hud__cell--dim">
+        <span class="hud__k">BEST</span>
+        <span class="hud__v" id="v-best">0</span>
+      </div>
+    </header>
+
+    <div id="combo" class="combo" aria-hidden="true"><span id="v-combo">x1</span></div>
+
+    <div id="power">
+      <div id="dial-mount"></div>
+      <span class="power__cap">BOUNCE</span>
+    </div>
+
+    <div id="sling-mount"></div>
+
+    <div id="overlay" class="overlay" data-show="title">
+      <div class="panel" data-screen="title">
+        <h1 class="panel__title">RICOCHET</h1>
+        <p class="panel__sub">슬링을 당겨 놓아라. 벽을 타고 블록을 쓸어라.</p>
+        <ul class="panel__how">
+          <li><b>당기기</b> — 멀리 당길수록 파워 한계가 올라간다 (튕김 1~5)</li>
+          <li><b>장전</b> — 누르고 있으면 0.5초마다 한 칸씩 차오른다</li>
+          <li><b>로켓</b> — 5.5초에 만렙, 10초를 다 채우면 ★. 쏘면 5블록 파괴</li>
+          <li><b>튕김</b> — 벽·천장·바닥 합산. 다 쓰면 스르르 사라진다</li>
+          <li><b>시간</b> — 60초. 웨이브를 깨면 +30초. 0이 되면 끝</li>
+          <li><b>ENTER</b> 길게 눌러 수직 발사 · <b>M</b> 음소거 · <b>ESC</b> 일시정지</li>
+        </ul>
+        <p class="panel__cue">아래 슬링을 당겨 시작</p>
+      </div>
+
+      <div class="panel" data-screen="wave">
+        <h2 class="panel__title panel__title--sm">WAVE CLEAR</h2>
+        <p class="panel__big" id="wave-bonus">+0</p>
+        <p class="panel__sub" id="wave-next">WAVE 2</p>
+      </div>
+
+      <div class="panel" data-screen="pause">
+        <h2 class="panel__title panel__title--sm">PAUSED</h2>
+        <p class="panel__sub">ESC 계속 · R 다시 시작</p>
+      </div>
+
+      <div class="panel" data-screen="over">
+        <h2 class="panel__title panel__title--sm">GAME OVER</h2>
+        <p class="panel__big" id="over-score">0</p>
+        <p class="panel__sub" id="over-note">WAVE 1 · BEST 0</p>
+        <p class="panel__cue">슬링을 당겨 다시 시작 · R</p>
+      </div>
+    </div>
+
+    <div id="scan" aria-hidden="true"></div>
+  </div>
+
+  <script src="js/sling.js"></script>
+  <script src="js/dial.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
