@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0c">
-<title>RICOCHET</title>
+<meta name="theme-color" content="#d9f0fc">
+<meta name="description" content="RICOCHET Bounce Buddies — 귀여운 동물 친구들과 함께하는 알록달록 슬링 게임!">
+<title>RICOCHET · Bounce Buddies</title>
 <style>
 /* RICOCHET — 레이아웃 / HUD / 오버레이 */
 
@@ -570,10 +571,38 @@ html, body {
 }
 
 </style>
+<style>
+/* RICOCHET: Bounce Buddies */
+:root{--bg:#e9f7fc;--bg-2:#fffaf1;--ink:#354563;--dim:#637390;--accent:#ce5476;--line:#d4e4ec;--font:"Trebuchet MS","Arial Rounded MT Bold",system-ui,sans-serif;color-scheme:light}
+#hud{gap:clamp(5px,2vw,18px);padding-top:max(12px,env(safe-area-inset-top))}
+.hud__cell{min-width:52px;background:#fffffff0;padding:7px 12px;border-radius:15px;border:2px solid #fff;box-shadow:0 4px 0 #a8c9df44}
+.hud__cell--dim{opacity:1}.hud__k{font-size:9px;letter-spacing:.06em;font-weight:800}.hud__v{color:#435a81}.hud__v[data-low]{color:#bd3659}
+#scan{display:none}.combo{text-shadow:0 3px #fff;color:#a75295}
+.overlay{background:rgba(230,244,250,.45);padding:16px 16px 220px;align-items:center}
+.panel{max-width:440px;margin:0;padding:23px 25px;border:3px solid #fff;border-radius:32px;background:#fffcf5f5;box-shadow:0 12px 0 #bbd6e55c,0 20px 50px #6797b329;animation:none}
+.panel__title{color:#536bac;font-size:clamp(34px,9vw,55px);letter-spacing:-.06em;text-shadow:0 3px 0 #c7dcf6;margin:4px 0 7px}
+.panel__title--sm{font-size:28px;letter-spacing:0}.panel__sub{font-size:13px;letter-spacing:0;line-height:1.6;margin-bottom:12px}
+.panel__how{font-size:12px;gap:8px;line-height:1.6;margin:13px auto 17px}.panel__cue{color:#ab496a;letter-spacing:0;font-size:13px;font-weight:800;animation:none}
+.buddy-kicker{font-size:10px;font-weight:900;letter-spacing:3px;color:#ac6384;margin:0 0 8px}
+#buddy-lineup{display:block;width:100%;max-width:340px;height:auto;margin:0 auto 3px}
+.buddy-caption{font-size:11px;color:#72788b;margin:0 0 12px}
+#power{background:#ffffffe6;border:2px solid #fff;border-radius:25px;padding:8px;bottom:80px;box-shadow:0 5px 0 #b3d2e555}.power__cap{font-weight:800;letter-spacing:.06em}
+#next-buddy{position:absolute;right:16px;bottom:94px;width:124px;background:#fffffff0;border:2px solid #fff;border-radius:24px;padding:9px 6px;text-align:center;z-index:4;box-shadow:0 5px 0 #b3d2e555;pointer-events:none}
+#next-buddy .next-label{display:block;font-size:9px;letter-spacing:1px;font-weight:800;color:#65738a}#next-face{display:block;width:62px;height:68px;margin:-2px auto}#next-name{display:block;font-size:12px;font-weight:800;color:#415675}
+.sling-button__pad{box-shadow:0 5px 0 #9fb8d1,0 9px 18px #789db240;border:3px solid #fff}.sling-button__icon canvas{width:48px;height:54px;display:block}
+#sling-mount::after{content:"당겨서 슝!";position:absolute;white-space:nowrap;left:50%;top:72px;transform:translateX(-50%);font-size:12px;font-weight:800;color:#5b7390;pointer-events:none}
+.play-tools{position:absolute;bottom:max(13px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:7;white-space:nowrap}
+.play-tools button{border:2px solid #fff;border-radius:13px;background:#ffffffde;color:#526681;padding:8px 12px;font:700 11px var(--font);cursor:pointer;box-shadow:0 3px 0 #abcadd66}
+.play-tools button:focus-visible{outline:3px solid #b14e81;outline-offset:3px}.play-tools button:hover{background:#ffeff5}.play-tools button:disabled{opacity:.5;cursor:default}
+@media(max-width:500px){.hud__cell{padding:6px 9px;min-width:48px}.overlay{padding-bottom:235px}.panel{padding:18px 19px;border-radius:26px}.panel__how{font-size:11px;gap:7px}.panel__sub{font-size:12px}.panel__title{font-size:38px}#power{left:10px;padding:5px;bottom:90px}#next-buddy{right:10px;width:96px;bottom:99px}#next-face{width:54px;height:60px}#next-name{font-size:10px}}
+@media(max-height:660px){.overlay{padding-top:82px;padding-bottom:192px;align-items:start}.panel{padding:12px 18px}.panel__title{font-size:32px}.panel__sub{margin-bottom:5px}#buddy-lineup{max-width:260px}.buddy-caption{display:none}.panel__how{margin:6px auto 9px;font-size:10px;gap:4px}.buddy-kicker{margin:0;font-size:8px}.panel__cue{font-size:11px}}
+@media(max-height:470px){.overlay{padding:76px 145px 8px}.panel{max-height:calc(100svh - 84px);overflow:auto;pointer-events:auto}#buddy-lineup,.buddy-caption,.panel__how{display:none}.panel__sub{margin:10px 0}.panel__cue{font-size:12px}}
+
+</style>
 </head>
 <body>
   <div id="stage">
-    <canvas id="game"></canvas>
+    <canvas id="game" aria-label="동물 친구들과 블록을 맞히는 RICOCHET 게임"></canvas>
 
     <header id="hud">
       <div class="hud__cell">
@@ -606,38 +635,38 @@ html, body {
     </div>
 
     <div id="sling-mount"></div>
+    <aside id="next-buddy" aria-label="다음에 발사할 동물 친구"><span class="next-label">NEXT FRIEND</span><canvas id="next-face" width="124" height="136" aria-hidden="true"></canvas><span id="next-name" aria-live="polite">토토 토끼</span></aside>
+    <nav class="play-tools" aria-label="게임 조작"><button id="buddy-pause" type="button">잠깐 쉬기</button><button id="buddy-restart" type="button">다시 놀기</button><button id="buddy-mute" type="button" aria-pressed="false">소리 끄기</button></nav>
 
     <div id="overlay" class="overlay" data-show="title">
       <div class="panel" data-screen="title">
-        <h1 class="panel__title">RICOCHET</h1>
-        <p class="panel__sub">슬링을 당겨 놓아라. 벽을 타고 블록을 쓸어라.</p>
+        <p class="buddy-kicker">BOUNCE BUDDIES</p><h1 class="panel__title">RICOCHET</h1>
+        <p class="panel__sub">동물 친구들과 함께, 통통! 무지개 블록을 팡팡!</p><canvas id="buddy-lineup" width="680" height="140" aria-label="토끼, 여우, 개구리, 곰, 고양이, 펭귄, 병아리, 판다"></canvas><p class="buddy-caption">쏠 때마다 새로운 친구가 인사해요</p>
         <ul class="panel__how">
-          <li><b>당기기</b> — 멀리 당길수록 파워 한계가 올라간다 (튕김 1~5)</li>
-          <li><b>장전</b> — 누르고 있으면 0.5초마다 한 칸씩 차오른다</li>
-          <li><b>로켓</b> — 5.5초에 만렙, 10초를 다 채우면 ★. 쏘면 5블록 파괴</li>
-          <li><b>튕김</b> — 벽·천장·바닥 합산. 다 쓰면 스르르 사라진다</li>
-          <li><b>시간</b> — 60초. 웨이브를 깨면 +30초. 0이 되면 끝</li>
-          <li><b>ENTER</b> 길게 눌러 수직 발사 · <b>M</b> 음소거 · <b>ESC</b> 일시정지</li>
+          <li><b>슝! 발사</b> — 친구를 당겨 놓으면 반대쪽으로 날아가요.</li>
+          <li><b>꾹! 충전</b> — 멀리 당기고 기다리면 1~5번 통통! 10초면 ★ 슈퍼 친구!</li>
+          <li><b>팡! 성공</b> — 블록을 모두 맞히면 +30초. 금색 블록은 친구 +1!</li>
+          <li><b>키보드</b> — ENTER 꾹 눌렀다 놓기 · ESC 쉬기 · R 다시 놀기</li>
         </ul>
-        <p class="panel__cue">아래 슬링을 당겨 시작</p>
+        <p class="panel__cue">아래 동물 친구를 당겨서 시작해요!</p>
       </div>
 
       <div class="panel" data-screen="wave">
-        <h2 class="panel__title panel__title--sm">WAVE CLEAR</h2>
+        <h2 class="panel__title panel__title--sm">참 잘했어요!</h2>
         <p class="panel__big" id="wave-bonus">+0</p>
         <p class="panel__sub" id="wave-next">WAVE 2</p>
       </div>
 
       <div class="panel" data-screen="pause">
-        <h2 class="panel__title panel__title--sm">PAUSED</h2>
+        <h2 class="panel__title panel__title--sm">잠깐 쉬어요</h2>
         <p class="panel__sub">ESC 계속 · R 다시 시작</p>
       </div>
 
       <div class="panel" data-screen="over">
-        <h2 class="panel__title panel__title--sm">GAME OVER</h2>
+        <h2 class="panel__title panel__title--sm">멋지게 놀았어요!</h2>
         <p class="panel__big" id="over-score">0</p>
         <p class="panel__sub" id="over-note">WAVE 1 · BEST 0</p>
-        <p class="panel__cue">슬링을 당겨 다시 시작 · R</p>
+        <p class="panel__cue">친구를 당겨 한 번 더! · R</p>
       </div>
     </div>
 
@@ -645,6 +674,94 @@ html, body {
   </div>
 
   <script>
+/* Small original canvas characters, shared by the launcher, previews and balls. */
+(function (global) {
+  'use strict';
+  var friends = [
+    {name:'토토 토끼',kind:'bunny',color:'#ffc1d8',trail:'#df5791'},
+    {name:'코코 여우',kind:'fox',color:'#ffb274',trail:'#e27932'},
+    {name:'초롱 개구리',kind:'frog',color:'#97dfae',trail:'#298564'},
+    {name:'밤밤 곰',kind:'bear',color:'#dcb492',trail:'#976345'},
+    {name:'모모 고양이',kind:'cat',color:'#cbb9f6',trail:'#8b65c6'},
+    {name:'피피 펭귄',kind:'penguin',color:'#7aaccf',trail:'#3c719e'},
+    {name:'삐약 병아리',kind:'chick',color:'#ffdc72',trail:'#b7861f'},
+    {name:'포포 판다',kind:'panda',color:'#fffbef',trail:'#6a8a86'}
+  ];
+  var sprites = [];
+  function paint(ctx, buddy) {
+    var ink='#374659', cream='#fffaf0', pink='#f28fa7', c=buddy.color;
+    function oval(x,y,rx,ry,color,line) {
+      ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+      if(line!==false){ctx.strokeStyle=ink;ctx.lineWidth=.045;ctx.stroke();}
+    }
+    function triangle(x,y,flip,color) {
+      ctx.beginPath();ctx.moveTo(x-.32,y+.36);ctx.lineTo(x+flip*.1,y-.25);ctx.lineTo(x+.32,y+.36);
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle=ink;ctx.lineWidth=.045;ctx.stroke();
+    }
+    var kind=buddy.kind;
+    if(kind==='bunny') {
+      oval(-.4,-.93,.23,.62,c);oval(.4,-.93,.23,.62,c);
+      oval(-.4,-1,.105,.4,pink,false);oval(.4,-1,.105,.4,pink,false);
+    } else if(kind==='cat'||kind==='fox') {
+      triangle(-.59,-.91,-1,c);triangle(.59,-.91,1,c);
+      triangle(-.59,-.79,-1,kind==='fox'?'#704e43':pink);triangle(.59,-.79,1,kind==='fox'?'#704e43':pink);
+    } else if(kind==='bear'||kind==='panda') {
+      var ear=kind==='panda'?ink:c;
+      oval(-.72,-.77,.35,.36,ear);oval(.72,-.77,.35,.36,ear);
+      if(kind==='bear'){oval(-.72,-.77,.18,.19,pink,false);oval(.72,-.77,.18,.19,pink,false);}
+    }
+    oval(0,0,1,1,c);
+    if(kind==='frog'){oval(-.55,-.73,.34,.39,c);oval(.55,-.73,.34,.39,c);}
+    if(kind==='fox'){
+      oval(-.43,.27,.51,.57,cream,false);oval(.43,.27,.51,.57,cream,false);
+    } else if(kind==='penguin'){
+      oval(-.32,.08,.45,.72,cream,false);oval(.32,.08,.45,.72,cream,false);
+    } else if(kind==='bear'){oval(0,.38,.46,.36,cream,false);}
+    if(kind==='panda'){oval(-.4,-.13,.27,.33,ink,false);oval(.4,-.13,.27,.33,ink,false);}
+    if(kind==='cat'){
+      ctx.strokeStyle='#a283d5';ctx.lineWidth=.1;
+      [-.25,0,.25].forEach(function(x){ctx.beginPath();ctx.moveTo(x,-.9);ctx.lineTo(x,-.6);ctx.stroke();});
+    }
+    if(kind==='chick'){
+      ctx.strokeStyle=ink;ctx.lineWidth=.055;ctx.beginPath();ctx.moveTo(-.13,-.92);ctx.quadraticCurveTo(-.25,-1.35,.12,-1.13);ctx.quadraticCurveTo(.4,-1.18,.19,-.9);ctx.stroke();
+    }
+    var eyeY=kind==='frog'?-.76:-.15, eyeX=kind==='frog'?.55:.36;
+    [-1,1].forEach(function(side){
+      if(kind==='panda')oval(side*eyeX,eyeY,.12,.15,'#fff',false);
+      else {oval(side*eyeX,eyeY,.095,.135,ink,false);oval(side*eyeX-.025,eyeY-.05,.026,.035,'#fff',false);}
+      oval(side*.65,.3,.18,.1,pink,false);
+    });
+    if(kind==='penguin'||kind==='chick') {
+      ctx.beginPath();ctx.moveTo(-.2,.12);ctx.lineTo(.2,.12);ctx.lineTo(0,.37);ctx.closePath();ctx.fillStyle='#e88b3b';ctx.fill();
+    } else {
+      if(kind!=='frog')oval(0,.16,.11,.08,kind==='bunny'||kind==='cat'?pink:ink,false);
+      ctx.strokeStyle=ink;ctx.lineWidth=.048;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-.2,.4);ctx.quadraticCurveTo(0,.59,.2,.4);ctx.stroke();
+    }
+    if(kind==='cat') {
+      ctx.strokeStyle=ink;ctx.lineWidth=.03;
+      [-1,1].forEach(function(s){[.1,.28].forEach(function(y){ctx.beginPath();ctx.moveTo(s*.72,y);ctx.lineTo(s*1.06,y-.07);ctx.stroke();});});
+    }
+  }
+  function sprite(id) {
+    if(!sprites[id]) {
+      var canvas=document.createElement('canvas');canvas.width=128;canvas.height=144;
+      var ctx=canvas.getContext('2d');ctx.translate(64,81);ctx.scale(47,47);paint(ctx,friends[id]);sprites[id]=canvas;
+    }
+    return sprites[id];
+  }
+  function draw(ctx,id,x,y,r,tilt) {
+    ctx.save();ctx.translate(x,y);ctx.rotate(tilt||0);
+    ctx.drawImage(sprite(id),-64/47*r,-81/47*r,128/47*r,144/47*r);ctx.restore();
+  }
+  function preview(canvas,id,r) {
+    if(!canvas)return;var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+    draw(ctx,id,canvas.width/2,canvas.height*.59,r);
+  }
+  global.Buddies={list:friends,draw:draw,preview:preview};
+})(window);
+
+</script>
+<script>
 /* SlingButton 을 React/motion 없이 옮긴 것.
    원본의 상수·수식·DOM 구조를 그대로 두고, useMotionValue 대신 직접 rAF 루프를 돈다.
    API:  const sling = new Sling(mountEl, opts);  opts.onSend({ux,uy,power,x,y})  */
@@ -1915,7 +2032,7 @@ html, body {
   /* ── 상수 ─────────────────────────────────────── */
 
   var GRAVITY = 300;
-  var BALL_R = 7;
+  var BALL_R = 14;
   var E_WALL = 1;
   var E_BRICK = 1;
   var MAX_BALLS = 4;
@@ -1952,21 +2069,24 @@ html, body {
   var FIELD_BOTTOM = 0.58;
 
   var C = {
-    grid: 'rgba(255,255,255,0.035)',
-    accent: '#d6ff3f',
+    grid: 'rgba(130,170,200,0.08)',
+    accent: '#b2538d',
     ball: '#ffffff',
-    hp: ['#5ce1ff', '#a78bfa', '#fb7185'],
-    gold: '#fbbf24',
-    bomb: '#f97316'
+    hp: ['#8bdace', '#baaff0', '#f6a7ba'],
+    gold: '#f4cd73',
+    bomb: '#f8b185'
   };
 
   /* 남은 튕김 횟수를 색으로 알린다 */
-  function ballColor(ball) {
-    if (ball.charged) return '#ffffff';
-    if (ball.bounce >= 3) return C.accent;
-    if (ball.bounce === 2) return C.gold;
-    if (ball.bounce === 1) return C.bomb;
-    return '#fb7185';
+  function ballColor(ball) { return Buddies.list[ball.buddy].trail; }
+
+  function nextBuddy() {
+    // Avoid duplicates even when earlier characters are still bouncing.
+    for(var n=0;n<Buddies.list.length;n++) {
+      var id=(S.buddyCursor+n)%Buddies.list.length;
+      if(!S.balls.some(function(ball){return ball.buddy===id;}))return id;
+    }
+    return S.buddyCursor;
   }
 
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -2002,6 +2122,7 @@ html, body {
     lastSec: -1,
     bestCombo: 0,
     liveCombo: 0,
+    buddyCursor: 0,
     balls: [],
     bricks: [],
     parts: [],
@@ -2152,11 +2273,14 @@ html, body {
   /* ── 발사 ─────────────────────────────────────── */
 
   function spawnBall(x, y, ux, uy, power, charged) {
+    var buddy=nextBuddy();
+    S.buddyCursor=(buddy+1)%Buddies.list.length;
     var t = powerT(power);
     var speed = charged ? SPEED_MAX : speedOf(t);
     var n = charged ? BOUNCE_MAX : bounceOf(t);
     /* 주머니를 화면 밖까지 당겼어도 공은 화면 안에서 출발한다 */
     S.balls.push({
+      buddy: buddy,
       x: clamp(x, BALL_R, S.W - BALL_R),
       y: clamp(y, BALL_R, S.H - 14),
       vx: -ux * speed,
@@ -2551,27 +2675,17 @@ html, body {
     ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    /* 배경 */
     var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#101018');
-    g.addColorStop(0.55, '#0b0b10');
-    g.addColorStop(1, '#08080b');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+    g.addColorStop(0, '#d9f0fc');g.addColorStop(.7, '#f4faff');g.addColorStop(1, '#fff5df');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    // Soft clouds and paper hills leave the playing field easy to read.
+    function cloud(x,y,k){ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.fillStyle='#ffffffa8';ctx.beginPath();ctx.ellipse(0,8,55,19,0,0,Math.PI*2);ctx.ellipse(-23,-2,24,24,0,0,Math.PI*2);ctx.ellipse(12,-10,30,29,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    cloud(W*.12,H*.15,.85);cloud(W*.86,H*.14,1.05);cloud(W*.63,H*.65,.65);cloud(W*.25,H*.56,.55);
+    ctx.fillStyle='#dceecd';ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,H-48);ctx.quadraticCurveTo(W*.24,H-145,W*.58,H);ctx.fill();
+    ctx.fillStyle='#f6dedb';ctx.beginPath();ctx.moveTo(W,H);ctx.lineTo(W,H-80);ctx.quadraticCurveTo(W*.79,H-143,W*.4,H);ctx.fill();
+    ctx.fillStyle='#f3d17e';
+    for(var s=0;s<12;s++){var sx=(s*.371%1)*W,sy=H*.35+(s*.233%1)*H*.38;ctx.beginPath();ctx.arc(sx,sy,2,0,Math.PI*2);ctx.fill();}
 
-    ctx.strokeStyle = C.grid;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    var step = 44;
-    for (var gx = (S.t * 6) % step; gx < W; gx += step) {
-      ctx.moveTo(Math.round(gx) + 0.5, 0);
-      ctx.lineTo(Math.round(gx) + 0.5, H);
-    }
-    for (var gy = 0; gy < H; gy += step) {
-      ctx.moveTo(0, Math.round(gy) + 0.5);
-      ctx.lineTo(W, Math.round(gy) + 0.5);
-    }
-    ctx.stroke();
 
     /* 화면 흔들림 */
     if (S.shake > 0.1 && !S.reduce) {
@@ -2593,51 +2707,21 @@ html, body {
   }
 
   function drawBricks(ctx) {
-    for (var i = 0; i < S.bricks.length; i++) {
-      var b = S.bricks[i];
-      if (!b.alive) continue;
-
-      var bob = S.reduce ? 0 : Math.sin(S.t * 1.6 + b.phase) * 1.6;
-      var x = b.x;
-      var y = b.y + bob;
-
-      var col = b.type === 'gold' ? C.gold : b.type === 'bomb' ? C.bomb : C.hp[b.hp - 1];
-
-      ctx.save();
-      roundRect(ctx, x, y, b.w, b.h, 5);
-      ctx.fillStyle = col;
-      ctx.globalAlpha = 0.14 + 0.06 * b.hp;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-
-      /* 안쪽 코어 — hp 만큼 채운다 */
-      var inset = 4;
-      var fillH = (b.h - inset * 2) * (b.hp / b.maxHp);
-      roundRect(ctx, x + inset, y + b.h - inset - fillH, b.w - inset * 2, fillH, 2.5);
-      ctx.fillStyle = col;
-      ctx.globalAlpha = 0.5;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      if (b.type === 'gold' || b.type === 'bomb') {
-        ctx.fillStyle = '#0a0a0c';
-        ctx.font = '700 10px ui-monospace, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(b.type === 'gold' ? '+1' : 'X', x + b.w / 2, y + b.h / 2 + 0.5);
-      }
-
-      if (b.flash > 0) {
-        roundRect(ctx, x, y, b.w, b.h, 5);
-        ctx.fillStyle = 'rgba(255,255,255,' + (b.flash * 0.7).toFixed(3) + ')';
-        ctx.fill();
-      }
+    for(var i=0;i<S.bricks.length;i++) {
+      var b=S.bricks[i];if(!b.alive)continue;
+      var x=b.x,y=b.y+(S.reduce?0:Math.sin(S.t*1.6+b.phase)*1.1);
+      var col=b.type==='gold'?C.gold:b.type==='bomb'?C.bomb:C.hp[b.hp-1];
+      ctx.save();roundRect(ctx,x,y+4,b.w,b.h,8);ctx.fillStyle='#7995b133';ctx.fill();
+      roundRect(ctx,x,y,b.w,b.h,8);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.stroke();
+      roundRect(ctx,x+5,y+4,b.w-10,4,2);ctx.fillStyle='#ffffff60';ctx.fill();
+      ctx.fillStyle='#485771';ctx.textAlign='center';ctx.textBaseline='middle';
+      if(b.type!=='brick'){ctx.font='bold 12px system-ui';ctx.fillText(b.type==='gold'?'+1':'★',x+b.w/2,y+b.h/2+2);}
+      else {for(var h=0;h<b.hp;h++){ctx.beginPath();ctx.arc(x+b.w/2+(h-(b.hp-1)/2)*7,y+b.h/2+3,2,0,Math.PI*2);ctx.fill();}}
+      if(b.flash>0){roundRect(ctx,x,y,b.w,b.h,8);ctx.fillStyle='rgba(255,255,255,'+(b.flash*.65)+')';ctx.fill();}
       ctx.restore();
     }
   }
+
 
   function drawAim(ctx) {
     if (!S.aim || S.mode === 'pause') return;
@@ -2647,7 +2731,7 @@ html, body {
       var a = 1 - i / pts.length;
       ctx.beginPath();
       ctx.arc(pts[i].x, pts[i].y, 2.6 - 1.4 * (i / pts.length), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(214,255,63,' + (a * 0.55).toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(135,90,155,' + (a * 0.75).toFixed(3) + ')';
       ctx.fill();
     }
     ctx.restore();
@@ -2665,59 +2749,28 @@ html, body {
   }
 
   function drawBalls(ctx) {
-    for (var i = 0; i < S.balls.length; i++) {
-      var b = S.balls[i];
-      var col = ballColor(b);
-      var a = b.fading ? clamp(1 - b.fade / FADE_TIME, 0, 1) : 1;
-      var grow = b.fading ? 1 + (1 - a) * 0.6 : 1;
-
-      /* 꼬리 */
-      ctx.fillStyle = col;
-      for (var t = 0; t < b.trail.length; t++) {
-        var k = t / b.trail.length;
-        ctx.globalAlpha = k * 0.45 * a;
-        ctx.beginPath();
-        ctx.arc(b.trail[t].x, b.trail[t].y, b.r * (0.25 + 0.6 * k), 0, Math.PI * 2);
-        ctx.fill();
+    for(var i=0;i<S.balls.length;i++) {
+      var b=S.balls[i],col=ballColor(b),a=b.fading?clamp(1-b.fade/FADE_TIME,0,1):1;
+      var grow=b.fading?1+(1-a)*.25:1;
+      ctx.save();ctx.fillStyle=col;
+      for(var t=0;t<b.trail.length;t++) {
+        var k=t/b.trail.length;ctx.globalAlpha=k*.27*a;ctx.beginPath();
+        ctx.arc(b.trail[t].x,b.trail[t].y,b.r*(.15+.55*k),0,Math.PI*2);ctx.fill();
       }
-      ctx.globalAlpha = 1;
-
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = b.charged ? 30 : 16;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r * grow, 0, Math.PI * 2);
-      ctx.fillStyle = C.ball;
-      ctx.fill();
-      if (b.charged) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r * grow + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = C.accent;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      ctx.globalAlpha=a;
+      var tilt=S.reduce?0:Math.sin(b.age*5+b.buddy)*.18;
+      Buddies.draw(ctx,b.buddy,b.x,b.y,b.r*grow,tilt);
+      if(b.charged) {
+        ctx.strokeStyle='#e5a53b';ctx.lineWidth=2;ctx.setLineDash([3,5]);ctx.beginPath();ctx.arc(b.x,b.y,b.r*1.48,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        ctx.font='bold 16px system-ui';ctx.fillStyle='#b47c1b';ctx.textAlign='center';ctx.fillText('★',b.x,b.y-b.r*1.8);
       }
+      // Remaining bounces stay visible independently of the character colour.
+      for(var p=0;p<b.bounce;p++){ctx.fillStyle='#fff';ctx.strokeStyle=col;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(b.x-(b.bounce-1)*3.6+p*7.2,b.y+b.r+7,2.2,0,Math.PI*2);ctx.fill();ctx.stroke();}
+      if(b.combo>=2){ctx.font='bold 12px system-ui';ctx.fillStyle='#4a5874';ctx.textAlign='center';ctx.fillText('x'+b.combo,b.x,b.y-b.r*1.8-5);}
       ctx.restore();
-
-      /* 남은 튕김 횟수 */
-      ctx.globalAlpha = a;
-      for (var p = 0; p < b.bounce; p++) {
-        ctx.beginPath();
-        ctx.arc(b.x - (b.bounce - 1) * 3 + p * 6, b.y + b.r + 8, 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = col;
-        ctx.fill();
-      }
-
-      if (b.combo >= 2) {
-        ctx.font = '700 11px ui-monospace, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = col;
-        ctx.fillText('x' + b.combo, b.x, b.y - b.r - 10);
-      }
-      ctx.globalAlpha = 1;
     }
   }
+
 
   function drawFloats(ctx) {
     ctx.textAlign = 'center';
@@ -2738,6 +2791,7 @@ html, body {
   var Game = {
     S: S,
     hooks: hooks,
+    nextBuddy: function () { return S.mode==='over'?0:nextBuddy(); },
 
     init: function (canvas) {
       S.canvas = canvas;
@@ -2779,6 +2833,7 @@ html, body {
       S.lastSec = -1;
       S.bestCombo = 0;
       S.liveCombo = 0;
+      S.buddyCursor = 0;
       S.balls.length = 0;
       S.parts.length = 0;
       S.floats.length = 0;
@@ -2879,8 +2934,8 @@ html, body {
   var overScore = document.getElementById('over-score');
   var overNote = document.getElementById('over-note');
 
-  var ACCENT = '#d6ff3f';
-  var HOT = '#ffffff';
+  var ACCENT = '#b2538d';
+  var HOT = '#f4cc65';
 
   /* 장전 — 누르고 있는 동안 0.5초마다 파워가 한 칸씩 오른다.
      5.5초에 최대(튕김 5), 거기서 4.5초를 더 버티면 10초 — 로켓 발사 준비. */
@@ -2909,7 +2964,7 @@ html, body {
     unit: '',
     label: '튕김 파워',
     accent: ACCENT,
-    ink: '#f2f2f5',
+    ink: '#435d80',
     size: window.innerWidth < 420 ? 92 : 116,
     sweep: 300,
     thickness: 4,
@@ -2977,11 +3032,11 @@ html, body {
     flight: 130,
     minHold: 0,
     tapPower: function () { return manualT; },
-    padColor: '#f5f5f5',
+    padColor: '#ffffff',
     iconColor: '#18181b',
     accentColor: ACCENT,
-    wellColor: '#1a1a22',
-    bandColor: '#4a4a58',
+    wellColor: '#b6d7e9',
+    bandColor: '#8daacc',
     ariaLabel: '발사',
     hint: '누르고 있으면 파워가 차오릅니다. 드래그해서 놓으면 그 반대 방향으로 날아갑니다.',
 
@@ -3106,11 +3161,12 @@ html, body {
   document.addEventListener('keydown', function (e) {
     var k = e.key.toLowerCase();
 
-    if (k === 'm') { SFX.boot(); SFX.toggleMute(); return; }
-    if (k === 'escape') { e.preventDefault(); Game.togglePause(); return; }
-    if (k === 'r') { SFX.boot(); sling.reset(); endCharge(); Game.start(); return; }
+    if (k === 'm') { if(!e.repeat)muteBuddies(); return; }
+    if (k === 'escape') { e.preventDefault(); if(!e.repeat)pauseBuddies(); return; }
+    if (k === 'r') { if(!e.repeat)restartBuddies(); return; }
 
     if (k === 'enter' || k === ' ') {
+      if(e.target.closest && e.target.closest('.play-tools'))return;
       /* 다이얼에 포커스가 있으면 방향키/스페이스는 다이얼 몫 */
       if (document.activeElement === dial.svg && k === ' ') return;
       e.preventDefault();
@@ -3130,6 +3186,41 @@ html, body {
   /* 디버그 훅 */
   window.RICOCHET = { sling: sling, dial: dial, game: Game };
 
+  // Show the exact next character in the sling and the small preview card.
+  var nextCanvas=document.getElementById('next-face');
+  var nextName=document.getElementById('next-name');
+  var launcherCanvas=document.createElement('canvas');launcherCanvas.width=96;launcherCanvas.height=108;
+  launcherCanvas.setAttribute('aria-hidden','true');sling.icon.replaceChildren(launcherCanvas);
+  var lineup=document.getElementById('buddy-lineup'),lineupCtx=lineup.getContext('2d');
+  Buddies.list.forEach(function(friend,id){Buddies.draw(lineupCtx,id,42+id*85,80,25);});
+  var shownBuddy=-1;
+  function refreshBuddy() {
+    var id=Game.nextBuddy();
+    if(id===shownBuddy)return;shownBuddy=id;
+    Buddies.preview(nextCanvas,id,34);Buddies.preview(launcherCanvas,id,27);
+    nextName.textContent=Buddies.list[id].name;
+    sling.pad.setAttribute('aria-label',Buddies.list[id].name+' 발사');
+  }
+  var pauseButton=document.getElementById('buddy-pause');
+  var restartButton=document.getElementById('buddy-restart');
+  var muteButton=document.getElementById('buddy-mute');
+  function cancelBuddyCharge() {
+    keyHold=0;clearInterval(keyTimer);sling.reset();endCharge();Game.clearAim();
+  }
+  function pauseBuddies() {cancelBuddyCharge();Game.togglePause();}
+  function restartBuddies() {SFX.boot();cancelBuddyCharge();Game.start();refreshBuddy();}
+  function muteBuddies() {SFX.boot();SFX.toggleMute();refreshTools();}
+  function refreshTools() {
+    pauseButton.textContent=Game.S.mode==='pause'?'계속 놀기':'잠깐 쉬기';
+    pauseButton.disabled=Game.S.mode!=='playing'&&Game.S.mode!=='pause';
+    muteButton.textContent=SFX.isMuted()?'소리 켜기':'소리 끄기';
+    muteButton.setAttribute('aria-pressed',String(SFX.isMuted()));
+  }
+  pauseButton.addEventListener('click',pauseBuddies);
+  restartButton.addEventListener('click',restartBuddies);
+  muteButton.addEventListener('click',muteBuddies);
+  refreshBuddy();refreshTools();
+
   /* ── 루프 ─────────────────────────────────────── */
 
   Game.init(canvas);
@@ -3144,6 +3235,7 @@ html, body {
 
     if (Game.S.mode !== 'pause') Game.update(dt);
     Game.draw();
+    refreshBuddy();refreshTools();
 
     /* 쏠 수 없는 상태면 패드를 잠근다 (드래그 중에는 건드리지 않는다) */
     if (!sling.grip && !keyHold) {
