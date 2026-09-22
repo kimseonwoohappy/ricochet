@@ -5,9 +5,571 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0c">
 <title>RICOCHET</title>
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/sling.css">
-<link rel="stylesheet" href="css/dial.css">
+<style>
+/* RICOCHET — 레이아웃 / HUD / 오버레이 */
+
+:root {
+  --bg: #0a0a0c;
+  --bg-2: #101016;
+  --ink: #e8e8ec;
+  --dim: #6f6f7d;
+  --accent: #d6ff3f;
+  --line: rgba(255, 255, 255, 0.07);
+  --font: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+}
+
+#game {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* ── HUD ─────────────────────────────────────────── */
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: clamp(14px, 4vw, 40px);
+  justify-content: center;
+  padding: max(14px, env(safe-area-inset-top)) 16px 10px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hud__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+}
+
+.hud__cell--dim { opacity: 0.45; }
+
+.hud__k {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+}
+
+.hud__v {
+  font-size: clamp(16px, 4.6vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.hud__v[data-bump] {
+  color: var(--accent);
+  transform: scale(1.18);
+}
+
+.hud__v[data-low] { color: #fb7185; }
+
+/* ── 콤보 뱃지 ───────────────────────────────────── */
+
+.combo {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, -50%) scale(0.6);
+  font-size: clamp(30px, 11vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  text-shadow: 0 0 26px rgba(214, 255, 63, 0.35);
+}
+
+.combo[data-on] {
+  animation: combo-pop 520ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes combo-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  22%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  70%  { opacity: 1; transform: translate(-50%, -54%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -66%) scale(0.96); }
+}
+
+/* ── 슬링 마운트 ─────────────────────────────────── */
+
+#sling-mount {
+  position: absolute;
+  left: 50%;
+  /* 아래로 당길 공간이 필요하다 — 바닥에서 충분히 띄운다 */
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+/* ── 파워 다이얼 ─────────────────────────────────── */
+
+#power {
+  position: absolute;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  z-index: 4;
+}
+
+.power__cap {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+@media (max-width: 420px) {
+  #power { bottom: calc(60px + env(safe-area-inset-bottom)); }
+}
+
+/* ── 오버레이 ────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%, rgba(10, 10, 12, 0.55), rgba(10, 10, 12, 0.92));
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+.overlay[data-show] { opacity: 1; }
+.overlay[data-show="none"] { opacity: 0; }
+
+.panel {
+  display: none;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  word-break: keep-all;   /* 한국어는 어절 단위로 끊는다 */
+  padding: clamp(22px, 5vw, 30px) clamp(18px, 5vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(8, 8, 11, 0.9);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7);
+  animation: panel-in 320ms cubic-bezier(0.23, 1, 0.32, 1);
+  /* 슬링을 가리지 않도록 위로 띄운다 */
+  margin-bottom: clamp(100px, 22vh, 190px);
+}
+
+.overlay[data-show="title"] .panel[data-screen="title"],
+.overlay[data-show="wave"]  .panel[data-screen="wave"],
+.overlay[data-show="pause"] .panel[data-screen="pause"],
+.overlay[data-show="over"]  .panel[data-screen="over"] { display: block; }
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.panel__title {
+  margin: 0 0 10px;
+  font-size: clamp(38px, 13vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.panel__title--sm {
+  font-size: clamp(20px, 6vw, 28px);
+  letter-spacing: 0.16em;
+  color: var(--dim);
+  font-weight: 700;
+}
+
+.panel__big {
+  margin: 4px 0 6px;
+  font-size: clamp(40px, 13vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+}
+
+.panel__how {
+  margin: 0 auto 22px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+  text-align: left;
+  max-width: 340px;
+}
+
+.panel__how b { color: var(--ink); font-weight: 700; }
+
+.panel__cue {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* ── 스캔라인 / 비네트 ───────────────────────────── */
+
+#scan {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    radial-gradient(130% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55));
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combo[data-on], .panel, .panel__cue { animation: none; }
+  .panel__cue { opacity: 1; }
+}
+
+</style>
+<style>
+/* SlingButton — React/motion 버전의 스타일을 바닐라로 옮긴 것.
+   클래스명과 커스텀 프로퍼티는 원본 그대로 유지한다. */
+
+.sling-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--sl-size);
+  height: var(--sl-size);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 밴드 + 웰 + 파워 아크가 그려지는 SVG. 패드보다 아래 레이어. */
+.sling-button__fx {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--sl-svg);
+  height: var(--sl-svg);
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sling-button__well {
+  fill: var(--sl-well);
+}
+
+.sling-button__band {
+  fill: none;
+  stroke: var(--sl-band);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sling-button__band--hot {
+  stroke: var(--sl-accent);
+  opacity: 0;
+}
+
+/* 당긴 정도를 웰 둘레에 그리는 게이지 */
+.sling-button__arc {
+  fill: none;
+  stroke: var(--sl-accent);
+  stroke-width: var(--sl-stroke);
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* 발사 순간 웰에서 튀어나가는 점 */
+.sling-button__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--sl-dot);
+  height: var(--sl-dot);
+  margin: calc(var(--sl-dot) / -2) 0 0 calc(var(--sl-dot) / -2);
+  border-radius: 50%;
+  background: var(--sl-accent);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.sling-button__move {
+  position: relative;
+  display: block;
+  will-change: transform;
+}
+
+.sling-button__pad {
+  display: grid;
+  place-items: center;
+  width: var(--sl-size);
+  height: var(--sl-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sl-pad);
+  color: var(--sl-icon);
+  cursor: grab;
+  touch-action: none;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 10px 24px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 220ms ease;
+}
+
+.sling-button__pad:focus-visible {
+  outline: 2px solid var(--sl-accent);
+  outline-offset: 4px;
+}
+
+.sling-button__pad[data-held] {
+  cursor: grabbing;
+  transform: scale(0.94);
+}
+
+.sling-button__pad[data-armed] {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 0 0 2px var(--sl-accent),
+    0 0 26px color-mix(in srgb, var(--sl-accent) 55%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.sling-button__pad[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.35;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.sling-button__face {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sling-button__icon {
+  display: grid;
+  place-items: center;
+  will-change: transform;
+}
+
+.sling-button__icon svg {
+  display: block;
+}
+
+/* 장전 카운트다운 — 패드(흰 동그라미) 한가운데 */
+.sling-button__badge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 800 calc(var(--sl-size) * 0.42) / 1 var(--font, ui-monospace, monospace);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-icon);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 120ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+}
+
+.sling-button__pad[data-badge] .sling-button__icon {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.sling-button__icon {
+  transition: opacity 120ms ease;
+}
+
+.sling-button__pad[data-badge] .sling-button__badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 차지 완료 */
+.sling-button__pad[data-charged] {
+  background: var(--sl-accent);
+  box-shadow:
+    0 0 0 3px var(--sl-accent),
+    0 0 34px color-mix(in srgb, var(--sl-accent) 80%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+  animation: pad-charged 900ms ease-in-out infinite;
+}
+
+.sling-button__pad[data-charged] .sling-button__badge { color: #0a0a0c; }
+
+@keyframes pad-charged {
+  50% { box-shadow: 0 0 0 5px var(--sl-accent), 0 0 46px var(--sl-accent), 0 10px 24px rgba(0, 0, 0, 0.45); }
+}
+
+/* 접근성 전용 안내 문구 */
+.sling-button__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* prefers-reduced-motion 일 때의 발사 피드백 */
+.sling-button[data-sent] .sling-button__pad {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 0 0 3px var(--sl-accent),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sling-button__pad { transition: none; }
+}
+
+</style>
+<style>
+/* CometDial — React 버전 스타일을 바닐라로. 클래스명·CSS 변수는 원본 유지. */
+
+.comet-dial {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--cd-size);
+  height: var(--cd-size);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.comet-dial__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  cursor: grab;
+  outline: none;
+}
+
+.comet-dial[data-dragging] .comet-dial__ring { cursor: grabbing; }
+.comet-dial[data-disabled] .comet-dial__ring { cursor: default; }
+.comet-dial[data-disabled] { opacity: 0.4; }
+
+.comet-dial__ring:focus-visible .comet-dial__track {
+  stroke: color-mix(in srgb, var(--cd-accent) 50%, transparent);
+}
+
+.comet-dial__track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-linecap: round;
+  transition: stroke 160ms ease;
+}
+
+.comet-dial__lit {
+  fill: none;
+  stroke: var(--cd-accent);
+  stroke-linecap: round;
+}
+
+.comet-dial__comet path {
+  fill: none;
+  stroke: var(--cd-accent);
+  stroke-linecap: round;
+}
+
+.comet-dial__head {
+  fill: var(--cd-ink);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cd-accent) 70%, transparent));
+}
+
+.comet-dial__readout {
+  position: relative;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.comet-dial__value {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  color: var(--cd-ink);
+}
+
+.comet-dial__figure {
+  font-size: var(--cd-figure);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.comet-dial__unit {
+  font-size: calc(var(--cd-figure) * 0.42);
+  font-weight: 700;
+  color: var(--cd-accent);
+}
+
+</style>
 </head>
 <body>
   <div id="stage">
@@ -82,10 +644,2540 @@
     <div id="scan" aria-hidden="true"></div>
   </div>
 
-  <script src="js/sling.js"></script>
-  <script src="js/dial.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/game.js"></script>
-  <script src="js/main.js"></script>
+  <script>
+/* SlingButton 을 React/motion 없이 옮긴 것.
+   원본의 상수·수식·DOM 구조를 그대로 두고, useMotionValue 대신 직접 rAF 루프를 돈다.
+   API:  const sling = new Sling(mountEl, opts);  opts.onSend({ux,uy,power,x,y})  */
+(function (global) {
+  'use strict';
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  var GAP = 4;
+  var SLOP = { fine: 4, coarse: 8 };
+  var FINGER_MAX = 3000;
+  var HAND_MAX = 6000;
+  var CANCEL = 0.5;
+  var POWER_CAP = 1.5;
+  var DOT_MS = 300;
+  var EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+  function rubberband(o, dim, c) {
+    c = c === undefined ? 0.55 : c;
+    return (o * dim * c) / (dim + c * Math.abs(o));
+  }
+
+  function svg(tag, attrs) {
+    var el = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  var ARROW =
+    '<svg width="W" height="W" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 20V5M12 5l-6 6M12 5l6 6"/></svg>';
+
+  var uid = 0;
+
+  function Sling(mount, opts) {
+    opts = opts || {};
+
+    this.padColor = opts.padColor || '#f5f5f5';
+    this.iconColor = opts.iconColor || '#18181b';
+    this.accentColor = opts.accentColor || '#f5f5f5';
+    this.wellColor = opts.wellColor || '#27272a';
+    this.bandColor = opts.bandColor || '#52525b';
+    this.size = opts.size || 56;
+    this.strokeWidth = opts.strokeWidth || 3;
+    this.armAt = opts.armAt === undefined ? 48 : opts.armAt;
+    this.maxPull = opts.maxPull === undefined ? 160 : opts.maxPull;
+    this.recoil = opts.recoil === undefined ? 0.2 : opts.recoil;
+    this.flight = opts.flight === undefined ? 120 : opts.flight;
+    this.settleDuration = opts.settleDuration === undefined ? 0.4 : opts.settleDuration;
+    this.launchSpeed = opts.launchSpeed === undefined ? 2600 : opts.launchSpeed;
+    this.axis = opts.axis || 'any';
+    this.tapSends = opts.tapSends !== false;
+    /* 탭/키보드로 쏠 때의 파워. 함수면 발사 시점에 물어본다 */
+    this.tapPower = opts.tapPower === undefined ? 1 : opts.tapPower;
+    this.disabled = !!opts.disabled;
+    this.ariaLabel = opts.ariaLabel || 'Send';
+    this.hint = opts.hint || 'Press Enter to send, or drag away and release.';
+
+    /* 추가 — 장전(패드를 누르고 있는 시간) 규칙 */
+    this.minHold = opts.minHold === undefined ? 0 : opts.minHold;
+
+    /* 추가 — 파워 100% 로 치는 당김 거리.
+       원본은 파워를 proj/armAt 로 재고 POWER_CAP(1.5)에서 잘랐다. 그러면 발사 가능한
+       구간이 armAt ~ 1.5·armAt 뿐이라 세기 차이가 거의 안 난다.
+       armAt 은 "쏠 수 있는 최소"로 두고, 0~100% 는 armAt ~ fullPull 로 따로 잰다. */
+    this.fullPull = opts.fullPull === undefined ? 0 : opts.fullPull;
+
+    this.onSend = opts.onSend || null;
+    this.onPull = opts.onPull || null;
+    this.onArm = opts.onArm || null;
+    this.onRelease = opts.onRelease || null;
+    this.onHoldStart = opts.onHoldStart || null;
+    this.onHold = opts.onHold || null;
+    this.onHoldEnd = opts.onHoldEnd || null;
+    this.onShort = opts.onShort || null;
+
+    this.reduce = global.matchMedia
+      ? global.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
+    /* 상태 */
+    this.x = 0;
+    this.y = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.dir = { ux: 0, uy: -1 };
+    this.grip = null;
+    this.armed = false;
+    this.settling = false;
+    this.raf = 0;
+    this.dotPending = false;
+    this.dotTimer = 0;
+    this.sentTimer = 0;
+    this.skipClick = false;
+    this.holdAt = 0;
+
+    this._build(mount);
+    this._bind();
+    this.paint();
+  }
+
+  /* ── DOM ──────────────────────────────────────── */
+
+  Sling.prototype._build = function (mount) {
+    var size = this.size;
+    var sw = this.strokeWidth;
+
+    this.wellR = size / 2 + GAP + sw;
+    this.H = this.wellR + sw + 2;
+    this.DOT = Math.max(6, Math.round(size / 7));
+    this.R = this.maxPull;
+    this.ARM = Math.min(this.armAt, 0.8 * this.R);
+
+    var H = this.H;
+    var hintId = 'sling-hint-' + ++uid;
+
+    var root = document.createElement('span');
+    root.className = 'sling-button';
+    root.style.setProperty('--sl-size', size + 'px');
+    root.style.setProperty('--sl-svg', 2 * H + 'px');
+    root.style.setProperty('--sl-pad', this.padColor);
+    root.style.setProperty('--sl-icon', this.iconColor);
+    root.style.setProperty('--sl-accent', this.accentColor);
+    root.style.setProperty('--sl-well', this.wellColor);
+    root.style.setProperty('--sl-band', this.bandColor);
+    root.style.setProperty('--sl-stroke', sw + 'px');
+    root.style.setProperty('--sl-dot', this.DOT + 'px');
+
+    var fxSvg = svg('svg', {
+      'class': 'sling-button__fx',
+      viewBox: -H + ' ' + -H + ' ' + 2 * H + ' ' + 2 * H,
+      'aria-hidden': 'true'
+    });
+
+    var tension = svg('g', { 'class': 'sling-button__tension' });
+    tension.style.opacity = '0';
+    var band = svg('path', { 'class': 'sling-button__band' });
+    var hot = svg('path', { 'class': 'sling-button__band sling-button__band--hot' });
+    tension.appendChild(band);
+    tension.appendChild(hot);
+
+    var well = svg('circle', { 'class': 'sling-button__well', r: this.wellR });
+    var arc = svg('circle', {
+      'class': 'sling-button__arc',
+      r: this.wellR,
+      pathLength: '1',
+      'stroke-dasharray': '0 1'
+    });
+    arc.style.opacity = '0';
+
+    fxSvg.appendChild(tension);
+    fxSvg.appendChild(well);
+    fxSvg.appendChild(arc);
+
+    var dot = document.createElement('span');
+    dot.className = 'sling-button__dot';
+    dot.setAttribute('aria-hidden', 'true');
+
+    var move = document.createElement('span');
+    move.className = 'sling-button__move';
+
+    var pad = document.createElement('button');
+    pad.type = 'button';
+    pad.className = 'sling-button__pad';
+    pad.setAttribute('aria-label', this.ariaLabel);
+    pad.setAttribute('aria-describedby', hintId);
+
+    var face = document.createElement('span');
+    face.className = 'sling-button__face';
+    var icon = document.createElement('span');
+    icon.className = 'sling-button__icon';
+    icon.innerHTML = ARROW.replace(/W/g, String(Math.round(size * 0.4)));
+    face.appendChild(icon);
+
+    /* 추가 — 장전 카운트다운이 뜨는 자리 */
+    var badge = document.createElement('span');
+    badge.className = 'sling-button__badge';
+    badge.setAttribute('aria-hidden', 'true');
+    face.appendChild(badge);
+
+    pad.appendChild(face);
+    move.appendChild(pad);
+
+    var sr = document.createElement('span');
+    sr.className = 'sling-button__sr';
+    sr.id = hintId;
+    sr.textContent = this.hint;
+
+    root.appendChild(fxSvg);
+    root.appendChild(dot);
+    root.appendChild(move);
+    root.appendChild(sr);
+    mount.appendChild(root);
+
+    this.root = root;
+    this.band = band;
+    this.hot = hot;
+    this.fx = tension;
+    this.arc = arc;
+    this.dot = dot;
+    this.move = move;
+    this.pad = pad;
+    this.icon = icon;
+    this.badge = badge;
+
+    this.setDisabled(this.disabled);
+  };
+
+  Sling.prototype._bind = function () {
+    var self = this;
+    var pad = this.pad;
+
+    pad.addEventListener('pointerdown', function (e) { self._down(e); });
+    pad.addEventListener('pointermove', function (e) { self._move(e); });
+    pad.addEventListener('pointerup', function (e) { self._release(e.pointerId, false); });
+    pad.addEventListener('pointercancel', function (e) { self._release(e.pointerId, true); });
+    pad.addEventListener('lostpointercapture', function (e) { self._release(e.pointerId, true); });
+    pad.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && self.grip) self._release(self.grip.id, true);
+    });
+    pad.addEventListener('click', function () {
+      if (self.skipClick) { self.skipClick = false; return; }
+      if (!self.disabled) self.fire(0, 1, self._tapPower(), 0);
+    });
+    pad.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  };
+
+  /* ── 그리기 ───────────────────────────────────── */
+
+  Sling.prototype.paint = function () {
+    var x = this.x;
+    var y = this.y;
+    var d = this.dir;
+    var size = this.size;
+    var wellR = this.wellR;
+
+    var proj = x * d.ux + y * d.uy;
+    var p = clamp(proj / this.ARM, 0, 1);
+    var dist = Math.hypot(x, y);
+
+    var path = '';
+    if (dist > 0.5) {
+      var a = Math.atan2(y, x);
+      var b = Math.acos(clamp((wellR - size / 2) / dist, -1, 1));
+      path = [a + b, a - b].map(function (t) {
+        var cx = Math.cos(t);
+        var cy = Math.sin(t);
+        return 'M' + (wellR * cx).toFixed(2) + ',' + (wellR * cy).toFixed(2) +
+               'L' + (x + (size / 2) * cx).toFixed(2) + ',' + (y + (size / 2) * cy).toFixed(2);
+      }).join('');
+    }
+
+    var w = this.strokeWidth * (1 - 0.3 * p);
+    this.band.setAttribute('d', path);
+    this.hot.setAttribute('d', path);
+    this.band.setAttribute('stroke-width', String(w));
+    this.hot.setAttribute('stroke-width', String(w));
+    this.hot.style.opacity = String(p);
+    this.fx.style.opacity = String(clamp(proj / 6, 0, 1));
+
+    this.arc.setAttribute('stroke-dasharray', p + ' ' + (1 - p));
+    this.arc.setAttribute('stroke-dashoffset', String(p / 2));
+    this.arc.style.opacity = p > 0.01 ? '1' : '0';
+    this.arc.setAttribute('transform', 'rotate(' + (Math.atan2(-d.uy, -d.ux) * 180) / Math.PI + ')');
+
+    this.move.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+
+    if (this.grip) this._aimIcon(d.ux, d.uy, dist);
+
+    if (this.onPull) {
+      this.onPull({
+        held: !!this.grip,
+        armed: this.armed,
+        ux: d.ux,
+        uy: d.uy,
+        dist: dist,
+        power: this._t(proj),                          /* 0~1 */
+        pull: clamp(proj / this.ARM, 0, POWER_CAP)     /* 원본 척도 */
+      });
+    }
+
+    if (this.dotPending && proj <= size / 4) this._launchDot();
+  };
+
+  Sling.prototype._aimIcon = function (ux, uy, dist) {
+    var angle = (Math.atan2(-uy, -ux) * 180) / Math.PI + 90;
+    this.icon.style.transition = 'none';
+    this.icon.style.transform = 'rotate(' + angle * clamp(dist / 12, 0, 1) + 'deg)';
+  };
+
+  Sling.prototype._relaxIcon = function () {
+    this.icon.style.transition = this.reduce
+      ? 'none'
+      : 'transform 360ms cubic-bezier(0.23, 1, 0.32, 1)';
+    this.icon.style.transform = 'rotate(0deg)';
+  };
+
+  Sling.prototype._launchDot = function () {
+    this.dotPending = false;
+    clearTimeout(this.dotTimer);
+    var d = this.dir;
+    this._relaxIcon();
+    var from = this.wellR;
+    var to = this.wellR + this.flight;
+    if (!this.dot.animate) return;
+    this.dot.animate(
+      [
+        { transform: 'translate(' + -d.ux * from + 'px, ' + -d.uy * from + 'px) scale(1)' },
+        { transform: 'translate(' + -d.ux * to + 'px, ' + -d.uy * to + 'px) scale(0.6)' }
+      ],
+      { duration: DOT_MS, easing: EASE_OUT, fill: 'none' }
+    );
+    this.dot.animate(
+      [{ opacity: 1, offset: 0 }, { opacity: 1, offset: 0.6 }, { opacity: 0, offset: 1 }],
+      { duration: DOT_MS, easing: 'linear', fill: 'none' }
+    );
+  };
+
+  /* ── 스프링 복귀 ──────────────────────────────── */
+
+  Sling.prototype._tick = function (now) {
+    var self = this;
+    var dt = Math.min(0.05, (now - this.last) / 1000 || 0);
+    this.last = now;
+
+    if (this.settling) {
+      var zeta = clamp(1 - this.recoil, 0.08, 1);
+      var omega = 5 / (zeta * this.settleDuration);
+      var left = dt;
+      while (left > 0) {
+        var h = Math.min(1 / 300, left);
+        left -= h;
+        this.vx += (-omega * omega * this.x - 2 * zeta * omega * this.vx) * h;
+        this.vy += (-omega * omega * this.y - 2 * zeta * omega * this.vy) * h;
+        this.x += this.vx * h;
+        this.y += this.vy * h;
+      }
+      if (Math.hypot(this.x, this.y) < 0.15 && Math.hypot(this.vx, this.vy) < 4) {
+        this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+        this.settling = false;
+      }
+    }
+
+    this.paint();
+
+    if (this.grip && this.onHold) this.onHold(now - this.holdAt);
+
+    if (this.grip || this.settling) {
+      this.raf = requestAnimationFrame(function (t) { self._tick(t); });
+    } else {
+      this.raf = 0;
+      if (this.onRelease) this.onRelease();
+    }
+  };
+
+  /* 탭이 가려져 있는 동안 예약해 둔 프레임은 영영 오지 않을 수 있다.
+     그때 raf 를 붙잡고 있으면 루프가 다시 못 도니, 항상 취소하고 새로 건다. */
+  Sling.prototype._run = function () {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    var self = this;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(function (t) { self._tick(t); });
+  };
+
+  Sling.prototype._settle = function (v0) {
+    if (this.reduce) {
+      this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+      this.settling = false;
+      this.paint();
+      return;
+    }
+    this.vx = v0.x;
+    this.vy = v0.y;
+    this.settling = true;
+    this._run();
+  };
+
+  /* ── 포인터 ───────────────────────────────────── */
+
+  Sling.prototype._down = function (e) {
+    if (this.disabled || this.grip || e.button !== 0) return;
+    var el = this.root;
+    var rect = el.getBoundingClientRect();
+    var scale = rect.width / (el.offsetWidth || rect.width) || 1;
+
+    this.settling = false;
+    this.vx = 0;
+    this.vy = 0;
+
+    var dNow = Math.hypot(this.x, this.y);
+    var dClamped = Math.min(dNow, 0.95 * this.R);
+    var rawNow = dNow > 0.5 ? (this.R * dClamped) / (this.R - dClamped) : 0;
+
+    this.grip = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      scale: scale,
+      moved: false,
+      hist: [],
+      rawOrigin: dNow > 0.5
+        ? { x: (rawNow * this.x) / dNow, y: (rawNow * this.y) / dNow }
+        : { x: 0, y: 0 },
+      slop: e.pointerType === 'touch' ? SLOP.coarse : SLOP.fine
+    };
+
+    try { this.pad.setPointerCapture(e.pointerId); } catch (err) {}
+    this.pad.setAttribute('data-held', '');
+    this.holdAt = performance.now();
+    if (this.onHoldStart) this.onHoldStart();
+    this._run();
+  };
+
+  Sling.prototype._move = function (e) {
+    var g = this.grip;
+    if (!g || g.id !== e.pointerId) return;
+
+    var dx = (e.clientX - g.startX) / g.scale;
+    var dy = (e.clientY - g.startY) / g.scale;
+    var rx = g.rawOrigin.x + dx;
+    var ry = g.rawOrigin.y + dy;
+
+    if (this.axis === 'horizontal') ry = rubberband(ry, this.size / 4);
+    else if (this.axis === 'vertical') rx = rubberband(rx, this.size / 4);
+
+    if (!g.moved && Math.hypot(dx, dy) > g.slop) g.moved = true;
+
+    var raw = Math.hypot(rx, ry);
+    if (raw < 0.01) return;
+
+    var d = (this.R * raw) / (this.R + raw);
+    var ux = rx / raw;
+    var uy = ry / raw;
+    this.dir = { ux: ux, uy: uy };
+    this.x = d * ux;
+    this.y = d * uy;
+
+    var t = performance.now();
+    g.hist.push({ x: this.x, y: this.y, t: t });
+    while (g.hist.length > 4 || t - g.hist[0].t > 80) g.hist.shift();
+
+    var isArmed = d >= this.ARM;
+    if (isArmed !== this.armed) {
+      this.armed = isArmed;
+      if (isArmed) {
+        this.pad.setAttribute('data-armed', '');
+        this.root.setAttribute('data-armed', '');
+      } else {
+        this.pad.removeAttribute('data-armed');
+        this.root.removeAttribute('data-armed');
+      }
+      if (this.onArm) this.onArm(isArmed);
+    }
+  };
+
+  Sling.prototype._release = function (pointerId, cancelled) {
+    var g = this.grip;
+    if (!g || g.id !== pointerId) return;
+    this.grip = null;
+    this.skipClick = true;
+    this.pad.removeAttribute('data-held');
+    try { this.pad.releasePointerCapture(pointerId); } catch (err) {}
+
+    var d = Math.hypot(this.x, this.y);
+    var p = d / this.ARM;
+    var dir = this.dir;
+    var held = this.holdAt ? performance.now() - this.holdAt : 0;
+    this.holdAt = 0;
+    var ready = held >= this.minHold;   /* 장전 시간을 채웠나 */
+
+    var vx = 0;
+    var vy = 0;
+    if (!cancelled && g.hist.length > 1) {
+      var a = g.hist[0];
+      var b = g.hist[g.hist.length - 1];
+      var dt = b.t - a.t;
+      if (dt > 0 && performance.now() - b.t < 50) {
+        vx = ((b.x - a.x) / dt) * 1000;
+        vy = ((b.y - a.y) / dt) * 1000;
+      }
+    }
+    var fm = Math.hypot(vx, vy);
+    if (fm > FINGER_MAX) { vx *= FINGER_MAX / fm; vy *= FINGER_MAX / fm; }
+
+    if (!g.moved) {
+      this._relaxIcon();
+      if (this.tapSends && !cancelled) this.fire(0, 1, this._tapPower(), held);
+      this._settle({ x: 0, y: 0 });
+    } else {
+      /* 장전이 덜 됐어도 나가긴 한다 — 세기는 받는 쪽(hold)이 정한다 */
+      var fire = this.armed && !cancelled;
+      if (fire && !ready && this.onShort) this.onShort(held);
+      var launch = fire
+        ? this.launchSpeed * Math.min(p, POWER_CAP)
+        : CANCEL * this.launchSpeed * Math.min(p, 1);
+
+      var v0x = vx - dir.ux * launch;
+      var v0y = vy - dir.uy * launch;
+      var m = Math.hypot(v0x, v0y);
+      if (m > HAND_MAX) { v0x *= HAND_MAX / m; v0y *= HAND_MAX / m; }
+
+      if (!fire) this._relaxIcon();
+      if (fire) {
+        this._fire(dir.ux, dir.uy, this._t(d), held);
+        if (this.reduce) {
+          this._flagSent();
+        } else {
+          var self = this;
+          this.dotPending = true;
+          this.dotTimer = setTimeout(function () { self._launchDot(); }, 150);
+        }
+      }
+      this._settle({ x: v0x, y: v0y });
+    }
+
+    this.armed = false;
+    this.pad.removeAttribute('data-armed');
+    this.root.removeAttribute('data-armed');
+    if (this.onHoldEnd) this.onHoldEnd(held);
+  };
+
+  Sling.prototype._flagSent = function () {
+    var self = this;
+    this.root.setAttribute('data-sent', '');
+    clearTimeout(this.sentTimer);
+    this.sentTimer = setTimeout(function () { self.root.removeAttribute('data-sent'); }, 200);
+  };
+
+  /* 당긴 거리 → 0~1 파워 */
+  Sling.prototype._t = function (d) {
+    if (this.fullPull > this.ARM) {
+      return clamp((d - this.ARM) / (this.fullPull - this.ARM), 0, 1);
+    }
+    return clamp(d / this.ARM / POWER_CAP, 0, 1);
+  };
+
+  Sling.prototype._tapPower = function () {
+    return typeof this.tapPower === 'function' ? this.tapPower() : this.tapPower;
+  };
+
+  /* 발사 통지 — 게임 쪽은 여기서 진행 방향(-ux,-uy)·파워·장전 시간을 받는다 */
+  Sling.prototype._fire = function (ux, uy, power, hold) {
+    if (this.disabled) return;
+    var pt = this.pouchPoint();
+    if (this.onSend) {
+      this.onSend({ ux: ux, uy: uy, power: power, x: pt.x, y: pt.y, hold: hold || 0 });
+    }
+  };
+
+  /* ── 바깥에서 쓰는 것 ─────────────────────────── */
+
+  /* 패드(주머니)의 현재 화면 좌표 */
+  Sling.prototype.pouchPoint = function () {
+    var r = this.root.getBoundingClientRect();
+    return { x: r.left + r.width / 2 + this.x, y: r.top + r.height / 2 + this.y };
+  };
+
+  /* 바깥에서 직접 쏘기 (키보드 등).
+     ux/uy 는 드래그와 같은 "당긴 방향"이다 — 날아가는 방향은 그 반대.
+     기본값 (0, 1) 은 아래로 당김 = 수직 상승. */
+  Sling.prototype.fire = function (ux, uy, power, hold) {
+    ux = ux === undefined ? 0 : ux;
+    uy = uy === undefined ? 1 : uy;
+    this._fire(ux, uy, power === undefined ? 1 : power, hold);
+    if (!this.reduce) {
+      this.dir = { ux: ux, uy: uy };
+      this._launchDot();
+    } else {
+      this._flagSent();
+    }
+  };
+
+  Sling.prototype.setDisabled = function (v) {
+    this.disabled = !!v;
+    if (this.disabled) {
+      this.pad.setAttribute('aria-disabled', 'true');
+      if (this.grip) this._release(this.grip.id, true);
+    } else {
+      this.pad.removeAttribute('aria-disabled');
+    }
+  };
+
+  /* 추가 — 패드 한가운데에 문자열을 띄운다 (장전 카운트다운). null 이면 화살표로 복귀 */
+  Sling.prototype.setBadge = function (text) {
+    if (text == null || text === '') {
+      this.badge.textContent = '';
+      this.pad.removeAttribute('data-badge');
+    } else {
+      this.badge.textContent = text;
+      this.pad.setAttribute('data-badge', '');
+    }
+  };
+
+  /* 추가 — 차지 완료 표시 */
+  Sling.prototype.setCharged = function (on) {
+    if (on) this.pad.setAttribute('data-charged', '');
+    else this.pad.removeAttribute('data-charged');
+  };
+
+  Sling.prototype.setAccent = function (color) {
+    this.accentColor = color;
+    this.root.style.setProperty('--sl-accent', color);
+  };
+
+  Sling.prototype.reset = function () {
+    this.settling = false;
+    this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+    this._relaxIcon();
+    this.paint();
+  };
+
+  Sling.POWER_CAP = POWER_CAP;
+  global.Sling = Sling;
+})(window);
+
+</script>
+  <script>
+/* CometDial 을 React/motion 없이 옮긴 것.
+   상수·수식·DOM 구조는 원본 그대로, useMotionValue + animate(spring) 자리에
+   최소한의 스프링 적분기(Reading)를 넣었다.
+   추가한 것은 track()/release() 하나 — 바깥(슬링 당김)이 다이얼을 끌고 다니게 한다. */
+(function (global) {
+  'use strict';
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  var R = 80;
+  var DEAD = 44;
+  var K = 12;
+  var V_FULL = 4;
+  var V_FLICK = 2;
+  var TAU_FOLLOW = 0.06;
+  var TAU_V = 0.05;
+  var DECEL = 0.99;
+  var DRAG_PX = 10;
+  var STALE_MS = 80;
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+  function velocityOf(hist) {
+    if (hist.length < 2) return 0;
+    var a = hist[0];
+    var b = hist[hist.length - 1];
+    return ((b[1] - a[1]) / Math.max(1, b[0] - a[0])) * 1000;
+  }
+
+  function decimalsOf(step) {
+    var s = String(step);
+    var i = s.indexOf('.');
+    return i === -1 ? 0 : s.length - i - 1;
+  }
+
+  function pointAt(deg) {
+    var a = (deg * Math.PI) / 180;
+    return [100 + Math.cos(a) * R, 100 + Math.sin(a) * R];
+  }
+
+  function arcPath(a0, a1) {
+    var p0 = pointAt(a0);
+    var p1 = pointAt(a1);
+    return 'M ' + p0[0].toFixed(3) + ' ' + p0[1].toFixed(3) +
+           ' A ' + R + ' ' + R + ' 0 ' + (a1 - a0 > 180 ? 1 : 0) + ' 1 ' +
+           p1[0].toFixed(3) + ' ' + p1[1].toFixed(3);
+  }
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  /* ── motion 의 MotionValue + spring 대체 ──────── */
+
+  function Reading(v, eps) {
+    this.value = v;
+    this.v = 0;
+    this.to = v;
+    this.k = 0;
+    this.c = 0;
+    this.animating = false;
+    this.eps = eps || 1e-4;
+  }
+  Reading.prototype.get = function () { return this.value; };
+  Reading.prototype.set = function (v) { this.value = v; };
+  Reading.prototype.jump = function (v) { this.value = v; this.v = 0; this.animating = false; };
+  Reading.prototype.stop = function () { this.animating = false; };
+  Reading.prototype.getVelocity = function () { return this.v; };
+  Reading.prototype.isAnimating = function () { return this.animating; };
+  Reading.prototype.spring = function (to, k, c, velocity) {
+    this.to = to;
+    this.k = k;
+    this.c = c;
+    this.v = velocity || 0;
+    this.animating = true;
+  };
+  Reading.prototype.step = function (dt) {
+    if (!this.animating) return;
+    var left = dt;
+    while (left > 0) {
+      var h = Math.min(1 / 600, left);
+      left -= h;
+      var a = -this.k * (this.value - this.to) - this.c * this.v;
+      this.v += a * h;
+      this.value += this.v * h;
+    }
+    if (Math.abs(this.value - this.to) < this.eps && Math.abs(this.v) < this.eps * 40) {
+      this.value = this.to;
+      this.v = 0;
+      this.animating = false;
+    }
+  };
+
+  /* ── CometDial ────────────────────────────────── */
+
+  function CometDial(mount, opts) {
+    opts = opts || {};
+
+    this.min = opts.min === undefined ? 0 : opts.min;
+    this.max = opts.max === undefined ? 100 : opts.max;
+    this.step = opts.step === undefined ? 1 : opts.step;
+    this.unit = opts.unit === undefined ? '%' : opts.unit;
+    this.label = opts.label || 'Level';
+    this.accent = opts.accent || '#f5f5f5';
+    this.ink = opts.ink || '#fdfdfd';
+    this.size = opts.size === undefined ? 250 : opts.size;
+    this.sweep = opts.sweep === undefined ? 320 : opts.sweep;
+    this.thickness = opts.thickness === undefined ? 5 : opts.thickness;
+    this.speed = opts.speed === undefined ? 25 : opts.speed;
+    this.tapBounce = opts.tapBounce === undefined ? 0.2 : opts.tapBounce;
+    this.flickBounce = opts.flickBounce === undefined ? 0.1 : opts.flickBounce;
+    this.momentum = opts.momentum === undefined ? 1 : opts.momentum;
+    this.cometReach = opts.cometReach === undefined ? 180 : opts.cometReach;
+    this.cometWidth = opts.cometWidth === undefined ? 12 : opts.cometWidth;
+    this.disabled = !!opts.disabled;
+
+    this.onChange = opts.onChange || null;
+    this.onChangeEnd = opts.onChangeEnd || null;
+
+    this.reduce = global.matchMedia
+      ? global.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
+    this.range = Math.max(1e-9, this.max - this.min);
+    var gap = 360 - this.sweep;
+    this.gap = gap;
+    this.start = 90 + gap / 2;
+    this.end = this.start + this.sweep;
+    this.decimals = decimalsOf(this.step);
+    this.k = 200 + (clamp(this.speed, 0, 100) / 100) * 700;
+    this.crit = 2 * Math.sqrt(this.k);
+
+    this.target = clamp(opts.value === undefined ? (opts.defaultValue === undefined ? 62 : opts.defaultValue) : opts.value, this.min, this.max);
+    this.reading = new Reading(this.target, this.range * 1e-4);
+
+    this.comet = [];
+    this.grip = null;
+    this.external = null;
+    this.loop = { raf: 0, last: 0, sched: 0, v: 0, rPrev: null, text: '', valueText: '' };
+
+    this._build(mount);
+    this._bind();
+    this._paint(performance.now());
+  }
+
+  CometDial.prototype._snap = function (v) {
+    return this.step > 0
+      ? clamp(Math.round((v - this.min) / this.step) * this.step + this.min, this.min, this.max)
+      : clamp(v, this.min, this.max);
+  };
+
+  CometDial.prototype._commit = function (v, finished, detail) {
+    var s = this._snap(v);
+    if (s !== this.target) {
+      this.target = s;
+      if (this.onChange) this.onChange(s);
+    }
+    if (finished && this.onChangeEnd) {
+      this.onChangeEnd(s, detail || { velocity: 0, bounce: this.tapBounce });
+    }
+  };
+
+  /* ── DOM ──────────────────────────────────────── */
+
+  CometDial.prototype._build = function (mount) {
+    var root = document.createElement('div');
+    root.className = 'comet-dial';
+    root.style.setProperty('--cd-accent', this.accent);
+    root.style.setProperty('--cd-ink', this.ink);
+    root.style.setProperty('--cd-size', this.size + 'px');
+    root.style.setProperty('--cd-figure', Math.round(this.size * 0.16) + 'px');
+    if (this.disabled) root.setAttribute('data-disabled', '');
+
+    var svg = svgEl('svg', {
+      'class': 'comet-dial__ring',
+      viewBox: '0 0 200 200',
+      role: 'slider',
+      tabindex: this.disabled ? -1 : 0,
+      'aria-label': this.label,
+      'aria-valuemin': this.min,
+      'aria-valuemax': this.max,
+      'aria-valuenow': this.target,
+      'aria-valuetext': this.target + this.unit
+    });
+    if (this.disabled) svg.setAttribute('aria-disabled', 'true');
+
+    var track = svgEl('path', {
+      'class': 'comet-dial__track',
+      d: arcPath(this.start, this.end),
+      'stroke-width': this.thickness
+    });
+    var lit = svgEl('path', { 'class': 'comet-dial__lit', 'stroke-width': this.thickness });
+
+    var g = svgEl('g', { 'class': 'comet-dial__comet' });
+    for (var j = 0; j < K; j++) {
+      var p = svgEl('path', {});
+      p.style.opacity = '0';
+      g.appendChild(p);
+      this.comet.push(p);
+    }
+
+    var head = svgEl('circle', { 'class': 'comet-dial__head', r: this.thickness * 1.8 });
+
+    svg.appendChild(track);
+    svg.appendChild(lit);
+    svg.appendChild(g);
+    svg.appendChild(head);
+
+    var readout = document.createElement('div');
+    readout.className = 'comet-dial__readout';
+    readout.setAttribute('aria-hidden', 'true');
+    var value = document.createElement('span');
+    value.className = 'comet-dial__value';
+    var figure = document.createElement('span');
+    figure.className = 'comet-dial__figure';
+    value.appendChild(figure);
+    if (this.unit) {
+      var unit = document.createElement('span');
+      unit.className = 'comet-dial__unit';
+      unit.textContent = this.unit;
+      value.appendChild(unit);
+    }
+    readout.appendChild(value);
+
+    root.appendChild(svg);
+    root.appendChild(readout);
+    mount.appendChild(root);
+
+    this.root = root;
+    this.svg = svg;
+    this.lit = lit;
+    this.head = head;
+    this.figure = figure;
+  };
+
+  CometDial.prototype._bind = function () {
+    var self = this;
+    this.svg.addEventListener('pointerdown', function (e) { self._down(e); });
+    this.svg.addEventListener('keydown', function (e) { self._key(e); });
+  };
+
+  /* ── 루프 ─────────────────────────────────────── */
+
+  /* 이미 돌고 있으면 그대로 둔다 (속도 히스토리를 살려야 코멧 꼬리가 산다).
+     다만 가려진 탭에서 예약된 프레임이 안 오면 raf 가 남아 루프가 막히므로,
+     한동안 프레임이 없었으면 죽은 것으로 보고 새로 건다. */
+  CometDial.prototype._wake = function () {
+    var L = this.loop;
+    var now = performance.now();
+    if (L.raf) {
+      if (now - L.sched < 250) return;
+      cancelAnimationFrame(L.raf);
+    }
+    var self = this;
+    L.last = now;
+    L.sched = now;
+    L.rPrev = null;
+    L.raf = requestAnimationFrame(function (t) { self._paint(t); });
+  };
+
+  CometDial.prototype._launch = function (to, bounce, velocity) {
+    if (velocity === undefined) velocity = this.reading.getVelocity();
+    this.reading.stop();
+    if (this.reduce) {
+      this.reading.jump(to);
+      this._wake();
+      return;
+    }
+    this.reading.spring(to, this.k, this.crit * (1 - clamp(bounce, 0, 0.9)), velocity);
+    this._wake();
+  };
+
+  CometDial.prototype._paint = function (now) {
+    var L = this.loop;
+    var self = this;
+    var dt = clamp((now - L.last) / 1000, 0, 0.05);
+    L.last = now;
+
+    var g = this.grip;
+    var follow = g && g.at != null ? g.at : (g ? null : this.external);
+    if (follow != null) {
+      if (this.reduce) this.reading.jump(follow);
+      else this.reading.set(this.reading.get() + (follow - this.reading.get()) * (1 - Math.exp(-dt / TAU_FOLLOW)));
+    } else {
+      this.reading.step(dt);
+    }
+
+    var r = this.reading.get();
+    var vRaw = L.rPrev == null || dt === 0 || this.reduce ? 0 : (r - L.rPrev) / dt / this.range;
+    L.rPrev = r;
+    L.v += (vRaw - L.v) * (1 - Math.exp(-dt / TAU_V));
+    var v = L.v;
+
+    var s = clamp(Math.abs(v) / V_FULL, 0, 1);
+    var dir = Math.sign(v) || 1;
+    var f = clamp((r - this.min) / this.range, 0, 1);
+    var ang = this.start + f * this.sweep;
+
+    this.lit.setAttribute('d', f > 0.0005 ? arcPath(this.start, ang) : '');
+    var head = pointAt(ang);
+    this.head.setAttribute('cx', head[0].toFixed(3));
+    this.head.setAttribute('cy', head[1].toFixed(3));
+
+    var seg = (this.cometReach * s) / K;
+    for (var j = 0; j < K; j++) {
+      var el = this.comet[j];
+      if (!el) continue;
+      var a0 = dir > 0 ? ang - (j + 1) * seg : ang + j * seg;
+      var a1 = dir > 0 ? ang - j * seg : ang + (j + 1) * seg;
+      a0 = clamp(a0, this.start, this.end);
+      a1 = clamp(a1, this.start, this.end);
+      if (seg < 0.01 || a1 - a0 < 0.01) {
+        if (el.style.opacity !== '0') el.style.opacity = '0';
+        continue;
+      }
+      var w = 1 - j / K;
+      el.setAttribute('d', arcPath(a0, a1));
+      el.setAttribute('stroke-width', (this.thickness + this.cometWidth * w * s).toFixed(2));
+      el.style.opacity = (w * s).toFixed(3);
+    }
+
+    var shown = clamp(r, this.min, this.max).toFixed(this.decimals);
+    if (shown !== L.text) {
+      L.text = shown;
+      this.figure.textContent = shown;
+      this.svg.setAttribute('aria-valuenow', shown);
+    }
+    var valueText = this.target + this.unit;
+    if (valueText !== L.valueText) {
+      L.valueText = valueText;
+      this.svg.setAttribute('aria-valuetext', valueText);
+    }
+
+    var moving = !!g || this.external != null || this.reading.isAnimating() || Math.abs(v) > 0.002;
+    if (!moving) {
+      for (var q = 0; q < this.comet.length; q++) {
+        if (this.comet[q] && this.comet[q].style.opacity !== '0') this.comet[q].style.opacity = '0';
+      }
+    }
+    L.sched = now;
+    L.raf = moving ? requestAnimationFrame(function (t) { self._paint(t); }) : 0;
+  };
+
+  /* ── 포인터 ───────────────────────────────────── */
+
+  CometDial.prototype._localPoint = function (cx, cy) {
+    var b = this.svg.getBoundingClientRect();
+    return [((cx - b.left) / b.width) * 200 - 100, ((cy - b.top) / b.height) * 200 - 100];
+  };
+
+  CometDial.prototype._angleAt = function (cx, cy) {
+    var p = this._localPoint(cx, cy);
+    var rel = ((Math.atan2(p[1], p[0]) * 180) / Math.PI - this.start + 720) % 360;
+    var g = this.grip;
+    if (rel > this.sweep) {
+      rel = g && g.side
+        ? (g.side === 'hi' ? this.sweep : 0)
+        : (rel < this.sweep + this.gap / 2 ? this.sweep : 0);
+    } else if (g) {
+      g.side = rel > this.sweep / 2 ? 'hi' : 'lo';
+    }
+    return this.min + (rel / this.sweep) * this.range;
+  };
+
+  CometDial.prototype._down = function (e) {
+    if (this.disabled || this.grip || e.button > 0) return;
+    var p = this._localPoint(e.clientX, e.clientY);
+    if (Math.hypot(p[0], p[1]) < DEAD) return;
+    e.preventDefault();
+
+    var self = this;
+    try { this.svg.setPointerCapture(e.pointerId); } catch (err) {}
+    this.svg.focus({ preventScroll: true });
+
+    this.grip = { id: e.pointerId, at: null, hist: [], side: null, moved: false, x0: e.clientX, y0: e.clientY };
+    var at = this._angleAt(e.clientX, e.clientY);
+    this.grip.hist.push([performance.now(), at]);
+    this.root.setAttribute('data-dragging', '');
+    this._commit(at, false);
+    this._launch(this._snap(at), this.tapBounce);
+
+    var onMove = function (ev) { if (ev.isTrusted) self._move(ev); };
+    var onUp = function (ev) { if (ev.isTrusted) self._up(ev); };
+    global.addEventListener('pointermove', onMove);
+    global.addEventListener('pointerup', onUp);
+    global.addEventListener('pointercancel', onUp);
+    this._unbind = function () {
+      global.removeEventListener('pointermove', onMove);
+      global.removeEventListener('pointerup', onUp);
+      global.removeEventListener('pointercancel', onUp);
+    };
+  };
+
+  CometDial.prototype._move = function (e) {
+    var g = this.grip;
+    if (!g || g.id !== e.pointerId) return;
+    if (!g.moved) {
+      if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < DRAG_PX) return;
+      g.moved = true;
+      this.reading.stop();
+    }
+    g.at = this._angleAt(e.clientX, e.clientY);
+    g.hist.push([performance.now(), g.at]);
+    if (g.hist.length > 4) g.hist.shift();
+    this._commit(g.at, false);
+    this._wake();
+  };
+
+  CometDial.prototype._up = function (e) {
+    var g = this.grip;
+    if (!g || g.id !== e.pointerId) return;
+    this.grip = null;
+    if (this._unbind) { this._unbind(); this._unbind = null; }
+    this.root.removeAttribute('data-dragging');
+    try { this.svg.releasePointerCapture(e.pointerId); } catch (err) {}
+
+    if (!g.moved) {
+      this._commit(this.target, true);
+      return;
+    }
+    var stale = performance.now() - g.hist[g.hist.length - 1][0] > STALE_MS;
+    var v = e.type === 'pointercancel' || stale ? 0 : velocityOf(g.hist);
+    var bounce = this.tapBounce +
+      (this.flickBounce - this.tapBounce) * clamp(Math.abs(v) / this.range / V_FLICK, 0, 1);
+    var to = this._snap((g.at == null ? this.target : g.at) + (v / 1000) * (DECEL / (1 - DECEL)) * this.momentum);
+    this._commit(to, true, { velocity: v, bounce: bounce });
+    this._launch(to, bounce, v);
+  };
+
+  CometDial.prototype._key = function (e) {
+    if (this.disabled) return;
+    var t = this.target;
+    var big = e.shiftKey ? 10 : 1;
+    var to;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowUp': to = t + this.step * big; break;
+      case 'ArrowLeft': case 'ArrowDown': to = t - this.step * big; break;
+      case 'PageUp': to = t + this.step * 10; break;
+      case 'PageDown': to = t - this.step * 10; break;
+      case 'Home': to = this.min; break;
+      case 'End': to = this.max; break;
+      default: return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    to = this._snap(to);
+    this.reading.stop();
+    this.reading.jump(to);
+    this._commit(to, true);
+    this._wake();
+  };
+
+  /* ── 추가 API — 바깥에서 바늘을 끌고 다닌다 ───── */
+
+  /* 슬링을 당기는 동안 그 값으로 따라오게 한다 (드래그와 같은 추종 감쇠) */
+  CometDial.prototype.track = function (v) {
+    if (this.grip) return;
+    this.external = clamp(v, this.min, this.max);
+    this._commit(this.external, false);
+    this._wake();
+  };
+
+  /* 추종을 끝내고 스냅 값으로 스프링 복귀 */
+  CometDial.prototype.release = function () {
+    if (this.external == null) return;
+    var to = this._snap(this.external);
+    this.external = null;
+    this._launch(to, this.tapBounce, 0);
+  };
+
+  CometDial.prototype.value = function () { return this.target; };
+
+  CometDial.prototype.setValue = function (v) {
+    var s = this._snap(v);
+    if (s === this.target) return;
+    this._commit(s, true);           /* onChange 도 같이 알린다 */
+    this._launch(s, this.tapBounce);
+  };
+
+  CometDial.prototype.setAccent = function (color) {
+    this.accent = color;
+    this.root.style.setProperty('--cd-accent', color);
+  };
+
+  global.CometDial = CometDial;
+})(window);
+
+</script>
+  <script>
+/* WebAudio 칩튠 효과음. 라이브러리 없음, 첫 입력 때 컨텍스트를 깨운다. */
+(function (global) {
+  'use strict';
+
+  var ctx = null;
+  var master = null;
+  var muted = false;
+
+  try {
+    muted = localStorage.getItem('ricochet_mute') === '1';
+  } catch (e) {}
+
+  function boot() {
+    if (ctx) {
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    }
+    var AC = global.AudioContext || global.webkitAudioContext;
+    if (!AC) return null;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = muted ? 0 : 0.28;
+    master.connect(ctx.destination);
+    return ctx;
+  }
+
+  function tone(opts) {
+    if (!boot() || muted) return;
+    var t0 = ctx.currentTime + (opts.delay || 0);
+    var dur = opts.dur || 0.12;
+
+    var osc = ctx.createOscillator();
+    osc.type = opts.type || 'square';
+    osc.frequency.setValueAtTime(opts.from, t0);
+    if (opts.to && opts.to !== opts.from) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t0 + dur);
+    }
+
+    var gain = ctx.createGain();
+    var peak = opts.gain === undefined ? 0.5 : opts.gain;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
+  function noise(dur, gainv, filterHz) {
+    if (!boot() || muted) return;
+    var t0 = ctx.currentTime;
+    var n = Math.floor(ctx.sampleRate * dur);
+    var buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(filterHz || 2200, t0);
+
+    var g = ctx.createGain();
+    g.gain.value = gainv === undefined ? 0.4 : gainv;
+
+    src.connect(lp);
+    lp.connect(g);
+    g.connect(master);
+    src.start(t0);
+  }
+
+  var SFX = {
+    /* 슬링을 당기기 시작 */
+    pull: function () {
+      tone({ type: 'triangle', from: 160, to: 320, dur: 0.1, gain: 0.18 });
+    },
+    /* 발사 임계 돌파 */
+    arm: function () {
+      tone({ type: 'square', from: 880, to: 1320, dur: 0.05, gain: 0.16 });
+    },
+    /* 발사 */
+    launch: function (power) {
+      var p = power || 1;
+      tone({ type: 'sawtooth', from: 220 * p, to: 70, dur: 0.16, gain: 0.32 });
+      noise(0.1, 0.22, 1400);
+    },
+    /* 블록 타격 — 콤보가 오를수록 음이 올라간다 */
+    hit: function (combo) {
+      var step = Math.min(14, (combo || 1) - 1);
+      var f = 392 * Math.pow(2, step / 12);
+      tone({ type: 'square', from: f, to: f * 1.5, dur: 0.07, gain: 0.3 });
+    },
+    /* 블록 파괴 */
+    breakBrick: function (combo) {
+      var step = Math.min(16, (combo || 1) - 1);
+      var f = 523 * Math.pow(2, step / 12);
+      tone({ type: 'square', from: f, to: f * 2, dur: 0.1, gain: 0.26 });
+      noise(0.07, 0.16, 3000);
+    },
+    /* 벽 반사 */
+    wall: function () {
+      tone({ type: 'triangle', from: 300, to: 190, dur: 0.05, gain: 0.14 });
+    },
+    /* 골드 블록 — 탄약 획득 */
+    gold: function () {
+      tone({ type: 'square', from: 700, dur: 0.07, gain: 0.3 });
+      tone({ type: 'square', from: 1050, dur: 0.09, gain: 0.28, delay: 0.07 });
+      tone({ type: 'square', from: 1400, dur: 0.12, gain: 0.26, delay: 0.15 });
+    },
+    /* 폭탄 */
+    boom: function () {
+      tone({ type: 'sawtooth', from: 180, to: 40, dur: 0.3, gain: 0.4 });
+      noise(0.26, 0.5, 900);
+    },
+    /* 공 소실 */
+    lost: function () {
+      tone({ type: 'triangle', from: 280, to: 90, dur: 0.24, gain: 0.22 });
+    },
+    /* 웨이브 클리어 */
+    clear: function () {
+      [523, 659, 784, 1047].forEach(function (f, i) {
+        tone({ type: 'square', from: f, dur: 0.14, gain: 0.26, delay: i * 0.09 });
+      });
+    },
+    /* 게임 오버 */
+    over: function () {
+      [523, 415, 330, 196].forEach(function (f, i) {
+        tone({ type: 'sawtooth', from: f, to: f * 0.92, dur: 0.24, gain: 0.26, delay: i * 0.15 });
+      });
+    }
+  };
+
+  SFX.boot = boot;
+
+  SFX.toggleMute = function () {
+    muted = !muted;
+    if (master) master.gain.value = muted ? 0 : 0.28;
+    try { localStorage.setItem('ricochet_mute', muted ? '1' : '0'); } catch (e) {}
+    return muted;
+  };
+
+  SFX.isMuted = function () { return muted; };
+
+  global.SFX = SFX;
+})(window);
+
+</script>
+  <script>
+/* RICOCHET — 물리/게임 로직.
+   슬링에서 넘어온 (방향, 파워)로 공을 쏘고, 벽에 튕기며 블록을 부순다. */
+(function (global) {
+  'use strict';
+
+  /* ── 상수 ─────────────────────────────────────── */
+
+  var GRAVITY = 300;
+  var BALL_R = 7;
+  var E_WALL = 1;
+  var E_BRICK = 1;
+  var MAX_BALLS = 4;
+  var BALL_LIFE = 14;
+  var MIN_SPEED = 200;
+
+  /* 파워 — 당긴 정도 t(0~1) 하나가 속도와 튕김 횟수를 같이 정한다.
+     튕김은 벽·천장·바닥을 모두 합한 총량이고, 블록은 소모하지 않는다. */
+  var SPEED_MIN = 380;
+  var SPEED_MAX = 1110;
+  var BOUNCE_MIN = 1;
+  var BOUNCE_MAX = 5;
+  var FLOOR_KICK = 430;
+  var FADE_TIME = 0.7;     /* 튕김을 다 쓴 공이 스르르 사라지는 데 걸리는 시간 */
+
+  /* 로켓 — 10초를 채우고 쏘면 맞은 자리에서 가장 가까운 블록을 한 번에 날린다 */
+  var NUKE_BLOCKS = 5;
+
+  /* 제한 시간 — 로켓을 무한정 채울 수 없게 한다 */
+  var TIME_START = 60;
+  var TIME_WAVE = 30;
+
+  /* 슬링에서 넘어오는 power 는 이미 0~1 로 정규화돼 있다 */
+  function powerT(power) { return Math.min(1, Math.max(0, power)); }
+  function speedOf(t) { return SPEED_MIN + (SPEED_MAX - SPEED_MIN) * t; }
+  function bounceOf(t) { return BOUNCE_MIN + Math.round(t * (BOUNCE_MAX - BOUNCE_MIN)); }
+
+  var START_SHOTS = 10;
+  var SHOT_CAP = 14;
+  var WAVE_REFILL = 4;
+
+  var TOP_PAD = 78;
+  var SIDE_PAD = 16;
+  var FIELD_BOTTOM = 0.58;
+
+  var C = {
+    grid: 'rgba(255,255,255,0.035)',
+    accent: '#d6ff3f',
+    ball: '#ffffff',
+    hp: ['#5ce1ff', '#a78bfa', '#fb7185'],
+    gold: '#fbbf24',
+    bomb: '#f97316'
+  };
+
+  /* 남은 튕김 횟수를 색으로 알린다 */
+  function ballColor(ball) {
+    if (ball.charged) return '#ffffff';
+    if (ball.bounce >= 3) return C.accent;
+    if (ball.bounce === 2) return C.gold;
+    if (ball.bounce === 1) return C.bomb;
+    return '#fb7185';
+  }
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function comma(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /* ── 상태 ─────────────────────────────────────── */
+
+  var S = {
+    canvas: null,
+    ctx: null,
+    W: 0,
+    H: 0,
+    dpr: 1,
+    mode: 'title',       // title | playing | wave | pause | over
+    score: 0,
+    best: 0,
+    wave: 1,
+    shots: START_SHOTS,
+    time: TIME_START,
+    lastSec: -1,
+    bestCombo: 0,
+    liveCombo: 0,
+    balls: [],
+    bricks: [],
+    parts: [],
+    floats: [],
+    aim: null,
+    shake: 0,
+    flash: 0,
+    t: 0,
+    waveTimer: 0,
+    overTimer: 0,
+    reduce: false
+  };
+
+  var hooks = { hud: null, overlay: null, combo: null };
+
+  /* ── 웨이브 구성 ──────────────────────────────── */
+
+  /* 공이 지나갈 구멍이 있어야 튕겨 다닌다 — 꽉 찬 배치는 쓰지 않는다 */
+  var PATTERNS = [
+    function checker(r, c) { return (r + c) % 2 === 0; },
+    function stripes(r, c) { return c % 3 !== 1; },
+    function diamond(r, c, rows, cols) {
+      var cx = (cols - 1) / 2;
+      var cy = (rows - 1) / 2;
+      var a = cx ? Math.abs(c - cx) / cx : 0;
+      var b = cy ? Math.abs(r - cy) / cy : 0;
+      return a + b <= 1.05;
+    },
+    function pyramid(r, c, rows, cols) { return c >= r && c <= cols - 1 - r; },
+    function frame(r, c, rows, cols) {
+      return r === 0 || r === rows - 1 || c === 0 || c === cols - 1 || (r + c) % 3 === 0;
+    },
+    function swiss() { return Math.random() > 0.22; }
+  ];
+
+  function buildWave(n) {
+    S.bricks.length = 0;
+
+    var usable = Math.min(S.W - SIDE_PAD * 2, 760);
+    var cols = clamp(Math.round(usable / 74), 5, 11);
+    var gap = 8;
+    var bw = (usable - gap * (cols - 1)) / cols;
+    var bh = clamp(bw * 0.42, 18, 30);
+
+    /* 천장과 블록 사이를 비워 둔다 — 그 틈에서 공이 되돌아오며 연속타가 난다 */
+    var y0 = Math.max(TOP_PAD, S.H * 0.2);
+    var maxRows = Math.max(3, Math.floor((S.H * FIELD_BOTTOM - y0) / (bh + gap)));
+    var rows = clamp(4 + Math.floor((n - 1) / 3), 3, Math.min(7, maxRows));
+
+    var pat = PATTERNS[(n - 1) % PATTERNS.length];
+    var x0 = (S.W - usable) / 2;
+
+    var cells = [];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (!pat(r, c, rows, cols)) continue;
+        var hp = clamp(1 + Math.floor((rows - 1 - r) / 2) + Math.floor((n - 1) / 4), 1, 3);
+        cells.push({
+          x: x0 + c * (bw + gap),
+          y: y0 + r * (bh + gap),
+          w: bw,
+          h: bh,
+          hp: hp,
+          maxHp: hp,
+          type: 'brick',
+          phase: (r * 0.6 + c * 0.4),
+          flash: 0,
+          alive: true
+        });
+      }
+    }
+
+    /* 특수 블록 배치 */
+    var golds = clamp(1 + Math.floor(n / 4), 1, 3);
+    var bombs = n >= 3 ? clamp(Math.floor(n / 4), 1, 3) : 0;
+    var pool = cells.slice();
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    var k = 0;
+    while (golds-- > 0 && k < pool.length) { pool[k].type = 'gold'; pool[k].hp = 1; pool[k].maxHp = 1; k++; }
+    while (bombs-- > 0 && k < pool.length) { pool[k].type = 'bomb'; pool[k].hp = 1; pool[k].maxHp = 1; k++; }
+
+    S.bricks = cells;
+  }
+
+  /* ── 파티클 / 플로터 ──────────────────────────── */
+
+  function burst(x, y, color, count, power) {
+    if (S.reduce) return;
+    count = count || 10;
+    power = power || 1;
+    for (var i = 0; i < count; i++) {
+      var a = rand(0, Math.PI * 2);
+      var sp = rand(60, 320) * power;
+      S.parts.push({
+        x: x, y: y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: rand(0.3, 0.7),
+        age: 0,
+        size: rand(2, 4.5),
+        color: color
+      });
+    }
+  }
+
+  function floater(x, y, text, color) {
+    S.floats.push({ x: x, y: y, text: text, color: color || C.accent, age: 0, life: 0.9 });
+  }
+
+  /* ── 점수 ─────────────────────────────────────── */
+
+  function addScore(v, x, y, color) {
+    S.score += v;
+    floater(x, y, '+' + comma(v), color);
+    if (S.score > S.best) {
+      S.best = S.score;
+      try { localStorage.setItem('ricochet_best', String(S.best)); } catch (e) {}
+    }
+    pushHud();
+  }
+
+  function pushHud() {
+    if (hooks.hud) {
+      hooks.hud({
+        score: S.score,
+        best: S.best,
+        wave: S.wave,
+        shots: S.shots,
+        time: Math.max(0, Math.ceil(S.time))
+      });
+    }
+  }
+
+  function setMode(m) {
+    S.mode = m;
+    if (hooks.overlay) hooks.overlay(m);
+  }
+
+  function endRun(reason) {
+    SFX.over();
+    setMode('over');
+    if (hooks.gameOver) hooks.gameOver(S.score, S.wave, S.best, reason);
+  }
+
+  /* ── 발사 ─────────────────────────────────────── */
+
+  function spawnBall(x, y, ux, uy, power, charged) {
+    var t = powerT(power);
+    var speed = charged ? SPEED_MAX : speedOf(t);
+    var n = charged ? BOUNCE_MAX : bounceOf(t);
+    /* 주머니를 화면 밖까지 당겼어도 공은 화면 안에서 출발한다 */
+    S.balls.push({
+      x: clamp(x, BALL_R, S.W - BALL_R),
+      y: clamp(y, BALL_R, S.H - 14),
+      vx: -ux * speed,
+      vy: -uy * speed,
+      r: charged ? BALL_R * 1.9 : BALL_R,
+      combo: 0,
+      age: 0,
+      bounce: n,
+      maxBounce: n,
+      charged: !!charged,
+      fading: false,
+      fade: 0,
+      trail: []
+    });
+  }
+
+  /* 튕김을 다 쓴 공 — 충돌을 끄고 스르르 사라진다 */
+  function startFade(ball) {
+    if (ball.fading) return;
+    ball.fading = true;
+    ball.fade = 0;
+    burst(ball.x, ball.y, ballColor(ball), 10, 0.5);
+    if (ball.combo >= 3) floater(ball.x, ball.y - 18, 'x' + ball.combo + ' END', '#6f6f7d');
+    SFX.lost();
+  }
+
+  /* ── 충돌 ─────────────────────────────────────── */
+
+  function hitBrick(b, ball, nx, ny) {
+    ball.combo++;
+    S.liveCombo = Math.max(S.liveCombo, ball.combo);
+    S.bestCombo = Math.max(S.bestCombo, ball.combo);
+    var mult = ball.combo;
+    var cx = b.x + b.w / 2;
+    var cy = b.y + b.h / 2;
+    b.flash = 1;
+
+    if (b.type === 'gold') {
+      b.alive = false;
+      S.shots = Math.min(SHOT_CAP, S.shots + 1);
+      addScore(120 * mult, cx, cy, C.gold);
+      floater(cx, cy - 18, 'SHOT +1', C.gold);
+      burst(cx, cy, C.gold, 20, 1.2);
+      SFX.gold();
+      S.flash = Math.max(S.flash, 0.35);
+    } else if (b.type === 'bomb') {
+      b.alive = false;
+      explode(cx, cy, ball);
+      addScore(80 * mult, cx, cy, C.bomb);
+      SFX.boom();
+      S.shake = Math.max(S.shake, 14);
+      S.flash = Math.max(S.flash, 0.5);
+    } else {
+      b.hp--;
+      if (b.hp <= 0) {
+        b.alive = false;
+        addScore(50 * b.maxHp * mult, cx, cy, C.hp[b.maxHp - 1]);
+        burst(cx, cy, C.hp[b.maxHp - 1], 12, 1);
+        SFX.breakBrick(ball.combo);
+        S.shake = Math.max(S.shake, 4);
+      } else {
+        addScore(10 * mult, cx, cy, C.hp[b.hp - 1]);
+        burst(cx, cy, C.hp[b.hp - 1], 5, 0.6);
+        SFX.hit(ball.combo);
+      }
+    }
+
+    if (ball.combo >= 3 && hooks.combo) hooks.combo(ball.combo);
+    return { nx: nx, ny: ny };
+  }
+
+  function explode(x, y, ball) {
+    var R = 96;
+    burst(x, y, C.bomb, 30, 1.8);
+    for (var i = 0; i < S.bricks.length; i++) {
+      var o = S.bricks[i];
+      if (!o.alive) continue;
+      var dx = o.x + o.w / 2 - x;
+      var dy = o.y + o.h / 2 - y;
+      if (dx * dx + dy * dy > R * R) continue;
+      o.hp -= 2;
+      o.flash = 1;
+      if (o.hp <= 0) {
+        o.alive = false;
+        S.score += 40 * Math.max(1, ball.combo);
+        burst(o.x + o.w / 2, o.y + o.h / 2, C.bomb, 8, 0.8);
+      }
+    }
+    pushHud();
+  }
+
+  /* 차지샷 — 터진 자리에서 가장 가까운 블록 NUKE_BLOCKS 개를 한 번에 날린다 */
+  function nuke(ball) {
+    var x = ball.x;
+    var y = ball.y;
+    var alive = [];
+    for (var i = 0; i < S.bricks.length; i++) {
+      var b = S.bricks[i];
+      if (!b.alive) continue;
+      var dx = b.x + b.w / 2 - x;
+      var dy = b.y + b.h / 2 - y;
+      alive.push({ b: b, d: dx * dx + dy * dy });
+    }
+    alive.sort(function (p, q) { return p.d - q.d; });
+
+    var n = Math.min(NUKE_BLOCKS, alive.length);
+    var gained = 0;
+    for (var j = 0; j < n; j++) {
+      var o = alive[j].b;
+      o.alive = false;
+      gained += 80 * o.maxHp;
+      if (o.type === 'gold') S.shots = Math.min(SHOT_CAP, S.shots + 1);
+      burst(o.x + o.w / 2, o.y + o.h / 2, o.type === 'gold' ? C.gold : C.hp[o.maxHp - 1], 10, 1.1);
+    }
+
+    S.score += gained;
+    if (S.score > S.best) {
+      S.best = S.score;
+      try { localStorage.setItem('ricochet_best', String(S.best)); } catch (e) {}
+    }
+    floater(x, y - 22, 'CHARGED ×' + n, '#ffffff');
+    floater(x, y + 2, '+' + comma(gained), C.accent);
+    burst(x, y, '#ffffff', 40, 2);
+    S.shake = 24;
+    S.flash = 0.9;
+    SFX.boom();
+    pushHud();
+    startFade(ball);
+  }
+
+  function collideBricks(ball) {
+    if (ball.fading) return false;
+    for (var i = 0; i < S.bricks.length; i++) {
+      var b = S.bricks[i];
+      if (!b.alive) continue;
+
+      /* 차지샷은 닿는 순간 터진다 */
+      if (ball.charged &&
+          ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+          ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+        nuke(ball);
+        return true;
+      }
+
+      var cx = clamp(ball.x, b.x, b.x + b.w);
+      var cy = clamp(ball.y, b.y, b.y + b.h);
+      var dx = ball.x - cx;
+      var dy = ball.y - cy;
+      var d2 = dx * dx + dy * dy;
+      if (d2 > ball.r * ball.r) continue;
+
+      var nx, ny;
+      if (d2 > 0.0001) {
+        var d = Math.sqrt(d2);
+        nx = dx / d;
+        ny = dy / d;
+        ball.x = cx + nx * (ball.r + 0.5);
+        ball.y = cy + ny * (ball.r + 0.5);
+      } else {
+        /* 중심이 블록 안 — 가장 얕은 축으로 밀어낸다 */
+        var left = ball.x - b.x;
+        var right = b.x + b.w - ball.x;
+        var top = ball.y - b.y;
+        var bot = b.y + b.h - ball.y;
+        var m = Math.min(left, right, top, bot);
+        if (m === left) { nx = -1; ny = 0; ball.x = b.x - ball.r; }
+        else if (m === right) { nx = 1; ny = 0; ball.x = b.x + b.w + ball.r; }
+        else if (m === top) { nx = 0; ny = -1; ball.y = b.y - ball.r; }
+        else { nx = 0; ny = 1; ball.y = b.y + b.h + ball.r; }
+      }
+
+      var dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) {
+        ball.vx -= (1 + E_BRICK) * dot * nx;
+        ball.vy -= (1 + E_BRICK) * dot * ny;
+      }
+      hitBrick(b, ball, nx, ny);
+      return true;
+    }
+    return false;
+  }
+
+  function stepBall(ball, dt) {
+    ball.vy += GRAVITY * dt;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    /* 사라지는 중인 공은 아무것도 건드리지 않는다 */
+    if (ball.fading) return;
+
+    /* 벽·천장·바닥을 한 덩어리로 — 남은 튕김이 없으면 그대로 사라진다 */
+    var outX = ball.x - ball.r < 0 || ball.x + ball.r > S.W;
+    var outY = ball.y - ball.r < 0 || ball.y + ball.r >= S.H;
+    if (outX || outY) {
+      if (ball.bounce <= 0) {
+        startFade(ball);
+        return;
+      }
+      ball.bounce--;
+      var floor = false;
+      if (ball.x - ball.r < 0) {
+        ball.x = ball.r;
+        ball.vx = Math.abs(ball.vx) * E_WALL;
+      } else if (ball.x + ball.r > S.W) {
+        ball.x = S.W - ball.r;
+        ball.vx = -Math.abs(ball.vx) * E_WALL;
+      }
+      if (ball.y - ball.r < 0) {
+        ball.y = ball.r;
+        ball.vy = Math.abs(ball.vy) * E_WALL;
+      } else if (ball.y + ball.r >= S.H) {
+        ball.y = S.H - ball.r;
+        ball.vy = -Math.max(Math.abs(ball.vy), FLOOR_KICK);
+        floor = true;
+      }
+      burst(ball.x, ball.y, ballColor(ball), floor ? 8 : 5, 0.6);
+      if (floor) S.shake = Math.max(S.shake, 3);
+      SFX.wall();
+    }
+
+    collideBricks(ball);
+
+    /* 너무 느려지면 살짝 밀어준다 (끼임 방지) */
+    var sp = Math.hypot(ball.vx, ball.vy);
+    if (sp < MIN_SPEED && sp > 0.001) {
+      ball.vx *= MIN_SPEED / sp;
+      ball.vy *= MIN_SPEED / sp;
+    }
+  }
+
+  /* ── 궤적 미리보기 ────────────────────────────── */
+
+  function predict(x, y, ux, uy, power) {
+    var speed = speedOf(powerT(power));
+    var px = x, py = y;
+    var vx = -ux * speed, vy = -uy * speed;
+    var dt = 1 / 90;
+    var pts = [];
+    for (var i = 0; i < 150; i++) {
+      vy += GRAVITY * dt;
+      px += vx * dt;
+      py += vy * dt;
+      if (px - BALL_R < 0) { px = BALL_R; vx = Math.abs(vx) * E_WALL; }
+      else if (px + BALL_R > S.W) { px = S.W - BALL_R; vx = -Math.abs(vx) * E_WALL; }
+      if (py - BALL_R < 0) { py = BALL_R; vy = Math.abs(vy) * E_WALL; }
+      if (py + BALL_R >= S.H) break;
+      if (i % 5 === 0) pts.push({ x: px, y: py });
+      /* 블록에 닿으면 거기서 끝 */
+      var stop = false;
+      for (var j = 0; j < S.bricks.length; j++) {
+        var b = S.bricks[j];
+        if (!b.alive) continue;
+        if (px + BALL_R < b.x || px - BALL_R > b.x + b.w) continue;
+        if (py + BALL_R < b.y || py - BALL_R > b.y + b.h) continue;
+        stop = true;
+        break;
+      }
+      if (stop) break;
+    }
+    return pts;
+  }
+
+  /* ── 루프 ─────────────────────────────────────── */
+
+  function update(dt) {
+    S.t += dt;
+
+    if (S.mode === 'wave') {
+      S.waveTimer -= dt;
+      if (S.waveTimer <= 0) {
+        S.wave++;
+        S.shots = Math.min(SHOT_CAP, S.shots + WAVE_REFILL);
+        buildWave(S.wave);
+        pushHud();
+        setMode('playing');
+      }
+    }
+
+    /* 제한 시간 */
+    if (S.mode === 'playing') {
+      S.time -= dt;
+      var sec = Math.max(0, Math.ceil(S.time));
+      if (sec !== S.lastSec) {
+        S.lastSec = sec;
+        pushHud();
+        if (sec <= 5 && sec > 0) SFX.arm();
+      }
+      if (S.time <= 0) {
+        S.time = 0;
+        floater(S.W / 2, S.H * 0.45, 'TIME UP', '#fb7185');
+        endRun('TIME UP');
+      }
+    }
+
+    var live = S.mode === 'playing' || S.mode === 'wave';
+
+    if (live) {
+      /* 공 */
+      for (var i = S.balls.length - 1; i >= 0; i--) {
+        var ball = S.balls[i];
+        ball.age += dt;
+
+        var sp = Math.hypot(ball.vx, ball.vy);
+        var steps = clamp(Math.ceil((sp * dt) / (ball.r * 0.6)), 1, 8);
+        var h = dt / steps;
+        for (var s = 0; s < steps; s++) stepBall(ball, h);
+
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 14) ball.trail.shift();
+
+        if (!ball.fading && ball.age > BALL_LIFE) startFade(ball);
+
+        if (ball.fading) {
+          ball.fade += dt;
+          if (ball.fade >= FADE_TIME) S.balls.splice(i, 1);
+        } else if (ball.y - ball.r > S.H + 60) {
+          S.balls.splice(i, 1);   /* 안전망 */
+        }
+      }
+
+      S.liveCombo = 0;
+      for (var q = 0; q < S.balls.length; q++) {
+        S.liveCombo = Math.max(S.liveCombo, S.balls[q].combo);
+      }
+
+      /* 블록 플래시 감쇠 */
+      for (var bi = 0; bi < S.bricks.length; bi++) {
+        if (S.bricks[bi].flash > 0) S.bricks[bi].flash = Math.max(0, S.bricks[bi].flash - dt * 4);
+      }
+
+      /* 웨이브 클리어 판정 */
+      if (S.mode === 'playing' && remaining() === 0) {
+        var bonus = 250 * S.wave + 120 * S.shots;
+        S.score += bonus;
+        S.time += TIME_WAVE;
+        if (S.score > S.best) {
+          S.best = S.score;
+          try { localStorage.setItem('ricochet_best', String(S.best)); } catch (e) {}
+        }
+        pushHud();
+        SFX.clear();
+        S.flash = 0.6;
+        S.waveTimer = 1.7;
+        setMode('wave');
+        if (hooks.waveClear) hooks.waveClear(bonus, S.wave + 1);
+      }
+
+      /* 게임 오버 판정 */
+      if (S.mode === 'playing' && S.shots <= 0 && S.balls.length === 0) {
+        S.overTimer += dt;
+        if (S.overTimer > 0.7) endRun('NO SHOTS');
+      } else {
+        S.overTimer = 0;
+      }
+    }
+
+    /* 파티클 */
+    for (var p = S.parts.length - 1; p >= 0; p--) {
+      var pt = S.parts[p];
+      pt.age += dt;
+      if (pt.age >= pt.life) { S.parts.splice(p, 1); continue; }
+      pt.vy += GRAVITY * 0.55 * dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+    }
+
+    /* 플로터 */
+    for (var f = S.floats.length - 1; f >= 0; f--) {
+      var fl = S.floats[f];
+      fl.age += dt;
+      if (fl.age >= fl.life) S.floats.splice(f, 1);
+      else fl.y -= 34 * dt;
+    }
+
+    S.shake = Math.max(0, S.shake - dt * 42);
+    S.flash = Math.max(0, S.flash - dt * 2.4);
+  }
+
+  function remaining() {
+    var n = 0;
+    for (var i = 0; i < S.bricks.length; i++) if (S.bricks[i].alive) n++;
+    return n;
+  }
+
+  /* ── 렌더 ─────────────────────────────────────── */
+
+  function draw() {
+    var ctx = S.ctx;
+    var W = S.W;
+    var H = S.H;
+
+    ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    /* 배경 */
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#101018');
+    g.addColorStop(0.55, '#0b0b10');
+    g.addColorStop(1, '#08080b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    var step = 44;
+    for (var gx = (S.t * 6) % step; gx < W; gx += step) {
+      ctx.moveTo(Math.round(gx) + 0.5, 0);
+      ctx.lineTo(Math.round(gx) + 0.5, H);
+    }
+    for (var gy = 0; gy < H; gy += step) {
+      ctx.moveTo(0, Math.round(gy) + 0.5);
+      ctx.lineTo(W, Math.round(gy) + 0.5);
+    }
+    ctx.stroke();
+
+    /* 화면 흔들림 */
+    if (S.shake > 0.1 && !S.reduce) {
+      ctx.translate(rand(-S.shake, S.shake), rand(-S.shake, S.shake));
+    }
+
+    drawBricks(ctx);
+    drawAim(ctx);
+    drawParticles(ctx);
+    drawBalls(ctx);
+    drawFloats(ctx);
+
+    ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+
+    if (S.flash > 0.01) {
+      ctx.fillStyle = 'rgba(214,255,63,' + (S.flash * 0.16).toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawBricks(ctx) {
+    for (var i = 0; i < S.bricks.length; i++) {
+      var b = S.bricks[i];
+      if (!b.alive) continue;
+
+      var bob = S.reduce ? 0 : Math.sin(S.t * 1.6 + b.phase) * 1.6;
+      var x = b.x;
+      var y = b.y + bob;
+
+      var col = b.type === 'gold' ? C.gold : b.type === 'bomb' ? C.bomb : C.hp[b.hp - 1];
+
+      ctx.save();
+      roundRect(ctx, x, y, b.w, b.h, 5);
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.14 + 0.06 * b.hp;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+
+      /* 안쪽 코어 — hp 만큼 채운다 */
+      var inset = 4;
+      var fillH = (b.h - inset * 2) * (b.hp / b.maxHp);
+      roundRect(ctx, x + inset, y + b.h - inset - fillH, b.w - inset * 2, fillH, 2.5);
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      if (b.type === 'gold' || b.type === 'bomb') {
+        ctx.fillStyle = '#0a0a0c';
+        ctx.font = '700 10px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(b.type === 'gold' ? '+1' : 'X', x + b.w / 2, y + b.h / 2 + 0.5);
+      }
+
+      if (b.flash > 0) {
+        roundRect(ctx, x, y, b.w, b.h, 5);
+        ctx.fillStyle = 'rgba(255,255,255,' + (b.flash * 0.7).toFixed(3) + ')';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawAim(ctx) {
+    if (!S.aim || S.mode === 'pause') return;
+    var pts = S.aim;
+    ctx.save();
+    for (var i = 0; i < pts.length; i++) {
+      var a = 1 - i / pts.length;
+      ctx.beginPath();
+      ctx.arc(pts[i].x, pts[i].y, 2.6 - 1.4 * (i / pts.length), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(214,255,63,' + (a * 0.55).toFixed(3) + ')';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawParticles(ctx) {
+    for (var i = 0; i < S.parts.length; i++) {
+      var p = S.parts[i];
+      var a = 1 - p.age / p.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBalls(ctx) {
+    for (var i = 0; i < S.balls.length; i++) {
+      var b = S.balls[i];
+      var col = ballColor(b);
+      var a = b.fading ? clamp(1 - b.fade / FADE_TIME, 0, 1) : 1;
+      var grow = b.fading ? 1 + (1 - a) * 0.6 : 1;
+
+      /* 꼬리 */
+      ctx.fillStyle = col;
+      for (var t = 0; t < b.trail.length; t++) {
+        var k = t / b.trail.length;
+        ctx.globalAlpha = k * 0.45 * a;
+        ctx.beginPath();
+        ctx.arc(b.trail[t].x, b.trail[t].y, b.r * (0.25 + 0.6 * k), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = b.charged ? 30 : 16;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * grow, 0, Math.PI * 2);
+      ctx.fillStyle = C.ball;
+      ctx.fill();
+      if (b.charged) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * grow + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = C.accent;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      /* 남은 튕김 횟수 */
+      ctx.globalAlpha = a;
+      for (var p = 0; p < b.bounce; p++) {
+        ctx.beginPath();
+        ctx.arc(b.x - (b.bounce - 1) * 3 + p * 6, b.y + b.r + 8, 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+      }
+
+      if (b.combo >= 2) {
+        ctx.font = '700 11px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = col;
+        ctx.fillText('x' + b.combo, b.x, b.y - b.r - 10);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawFloats(ctx) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < S.floats.length; i++) {
+      var f = S.floats[i];
+      var a = 1 - f.age / f.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = f.color;
+      ctx.font = '700 13px ui-monospace, monospace';
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ── 공개 API ─────────────────────────────────── */
+
+  var Game = {
+    S: S,
+    hooks: hooks,
+
+    init: function (canvas) {
+      S.canvas = canvas;
+      S.ctx = canvas.getContext('2d');
+      S.reduce = global.matchMedia
+        ? global.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+      try {
+        S.best = parseInt(localStorage.getItem('ricochet_best') || '0', 10) || 0;
+      } catch (e) { S.best = 0; }
+      this.resize();
+      buildWave(1);
+      pushHud();
+      setMode('title');
+    },
+
+    resize: function () {
+      var w = global.innerWidth;
+      var h = global.innerHeight;
+      var dpr = Math.min(2, global.devicePixelRatio || 1);
+      var prevW = S.W;
+      S.W = w;
+      S.H = h;
+      S.dpr = dpr;
+      S.canvas.width = Math.round(w * dpr);
+      S.canvas.height = Math.round(h * dpr);
+      S.canvas.style.width = w + 'px';
+      S.canvas.style.height = h + 'px';
+      S.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      /* 폭이 크게 바뀌면 현재 웨이브를 다시 깐다 (진행 중이면 유지) */
+      if (prevW && Math.abs(prevW - w) > 80 && S.mode === 'title') buildWave(S.wave);
+    },
+
+    start: function () {
+      S.score = 0;
+      S.wave = 1;
+      S.shots = START_SHOTS;
+      S.time = TIME_START;
+      S.lastSec = -1;
+      S.bestCombo = 0;
+      S.liveCombo = 0;
+      S.balls.length = 0;
+      S.parts.length = 0;
+      S.floats.length = 0;
+      S.overTimer = 0;
+      S.shake = 0;
+      S.flash = 0;
+      buildWave(1);
+      pushHud();
+      setMode('playing');
+    },
+
+    togglePause: function () {
+      if (S.mode === 'playing') setMode('pause');
+      else if (S.mode === 'pause') setMode('playing');
+    },
+
+    /* 슬링 → 게임. client 좌표를 캔버스 좌표로 옮긴다. */
+    launch: function (info) {
+      if (S.mode === 'title' || S.mode === 'over') { this.start(); }
+      if (S.mode !== 'playing') return false;
+      if (S.shots <= 0 || S.balls.length >= MAX_BALLS) return false;
+
+      var r = S.canvas.getBoundingClientRect();
+      var x = info.x - r.left;
+      var y = info.y - r.top;
+
+      S.shots--;
+      spawnBall(x, y, info.ux, info.uy, info.power, info.charged);
+      SFX.launch(info.charged ? 1.6 : 0.6 + powerT(info.power));
+      S.shake = Math.max(S.shake, info.charged ? 12 : 3 + 3 * info.power);
+      if (info.charged) S.flash = Math.max(S.flash, 0.4);
+      pushHud();
+      S.aim = null;
+      return true;
+    },
+
+    /* 화면에 한 줄 띄운다 (장전 부족 안내 등) */
+    hint: function (text, color) {
+      floater(S.W / 2, S.H * 0.68, text, color || '#6f6f7d');
+    },
+
+    /* 당긴 정도 → 튕김 횟수. 다이얼 표시용 */
+    bounceFor: function (power) { return bounceOf(powerT(power)); },
+    powerT: powerT,
+    BOUNCE_MIN: BOUNCE_MIN,
+    BOUNCE_MAX: BOUNCE_MAX,
+
+    /* 당기는 중 — 궤적 미리보기 */
+    aim: function (info) {
+      if (!info || !info.held || info.dist < 6) { S.aim = null; return; }
+      if (S.mode === 'pause' || S.mode === 'wave') { S.aim = null; return; }
+      if (S.mode === 'playing' && (S.shots <= 0 || S.balls.length >= MAX_BALLS)) {
+        S.aim = null;
+        return;
+      }
+      var r = S.canvas.getBoundingClientRect();
+      var pt = info.point;
+      S.aim = predict(pt.x - r.left, pt.y - r.top, info.ux, info.uy, info.power);
+    },
+
+    clearAim: function () { S.aim = null; },
+
+    canFire: function () {
+      return (S.mode === 'playing' && S.shots > 0 && S.balls.length < MAX_BALLS) ||
+             S.mode === 'title' || S.mode === 'over';
+    },
+
+    update: update,
+    draw: draw,
+    remaining: remaining
+  };
+
+  global.Game = Game;
+})(window);
+
+</script>
+  <script>
+/* 슬링 · 다이얼 · 게임 · HUD 를 묶는 곳 */
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('game');
+  var overlay = document.getElementById('overlay');
+  var comboEl = document.getElementById('combo');
+  var comboVal = document.getElementById('v-combo');
+  var mount = document.getElementById('sling-mount');
+  var dialMount = document.getElementById('dial-mount');
+
+  var V = {
+    score: document.getElementById('v-score'),
+    wave: document.getElementById('v-wave'),
+    shots: document.getElementById('v-shots'),
+    time: document.getElementById('v-time'),
+    best: document.getElementById('v-best')
+  };
+  var waveBonus = document.getElementById('wave-bonus');
+  var waveNext = document.getElementById('wave-next');
+  var overScore = document.getElementById('over-score');
+  var overNote = document.getElementById('over-note');
+
+  var ACCENT = '#d6ff3f';
+  var HOT = '#ffffff';
+
+  /* 장전 — 누르고 있는 동안 0.5초마다 파워가 한 칸씩 오른다.
+     5.5초에 최대(튕김 5), 거기서 4.5초를 더 버티면 10초 — 로켓 발사 준비. */
+  var RAMP_TICK = 500;
+  var RAMP_FULL = 5500;
+  var ROCKET_AT = 10000;
+  var TICKS = RAMP_FULL / RAMP_TICK;
+
+  /* 누른 시간 → 0~1 파워 (0.5초 단위로 끊는다) */
+  function timeT(ms) {
+    var n = Math.floor((ms || 0) / RAMP_TICK);
+    return Math.min(1, Math.max(0, n / TICKS));
+  }
+
+  function comma(n) {
+    return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /* ── 파워 다이얼 ──────────────────────────────── */
+
+  var dial = new CometDial(dialMount, {
+    min: Game.BOUNCE_MIN,
+    max: Game.BOUNCE_MAX,
+    step: 1,
+    defaultValue: 4,
+    unit: '',
+    label: '튕김 파워',
+    accent: ACCENT,
+    ink: '#f2f2f5',
+    size: window.innerWidth < 420 ? 92 : 116,
+    sweep: 300,
+    thickness: 4,
+    speed: 45,
+    cometReach: 150,
+    cometWidth: 10,
+    onChange: function (v) {
+      manualT = (v - Game.BOUNCE_MIN) / (Game.BOUNCE_MAX - Game.BOUNCE_MIN);
+    }
+  });
+
+  /* 다이얼로 직접 맞춰 둔 파워 — 탭/ENTER 발사에 쓰인다 */
+  var manualT = (dial.value() - Game.BOUNCE_MIN) / (Game.BOUNCE_MAX - Game.BOUNCE_MIN);
+
+  /* ── 장전 상태 ────────────────────────────────── */
+
+  var charged = false;
+  var lastLeft = -1;
+  var holdMs = 0;        /* 지금 누르고 있는 시간 */
+
+  function setCharged(on) {
+    if (on === charged) return;
+    charged = on;
+    sling.setCharged(on);
+    dial.setAccent(on ? HOT : ACCENT);
+    sling.setAccent(on ? HOT : ACCENT);
+    if (on) SFX.gold();
+  }
+
+  /* 누르고 있는 시간 → 패드 한가운데 10초 카운트다운 */
+  function updateCharge(ms) {
+    holdMs = ms;
+    var left = Math.ceil((ROCKET_AT - ms) / 1000);
+    if (left > 0) {
+      sling.setBadge(String(left));
+      setCharged(false);
+      if (left !== lastLeft) {
+        lastLeft = left;
+        SFX.arm();
+      }
+    } else {
+      sling.setBadge('★');
+      setCharged(true);
+    }
+  }
+
+  function endCharge() {
+    sling.setBadge(null);
+    setCharged(false);
+    lastLeft = -1;
+    holdMs = 0;
+    dial.release();
+  }
+
+  /* ── 슬링 ─────────────────────────────────────── */
+
+  var sling = new Sling(mount, {
+    size: 60,
+    strokeWidth: 3,
+    armAt: 28,          /* 여기까지 당겨야 나간다 */
+    fullPull: 70,       /* 여기까지 당기면 파워 100% */
+    maxPull: 170,
+    launchSpeed: 2600,
+    recoil: 0.24,
+    flight: 130,
+    minHold: 0,
+    tapPower: function () { return manualT; },
+    padColor: '#f5f5f5',
+    iconColor: '#18181b',
+    accentColor: ACCENT,
+    wellColor: '#1a1a22',
+    bandColor: '#4a4a58',
+    ariaLabel: '발사',
+    hint: '누르고 있으면 파워가 차오릅니다. 드래그해서 놓으면 그 반대 방향으로 날아갑니다.',
+
+    /* 당김이 파워의 천장, 장전 시간이 그 천장을 채우는 속도 */
+    onSend: function (info) {
+      SFX.boot();
+      info.power = Math.min(info.power, timeT(info.hold));
+      info.charged = charged;
+      Game.launch(info);
+    },
+
+    onPull: function (info) {
+      /* 생성자 안에서도 한 번 불리므로 바깥 변수(sling) 대신 this 를 쓴다 */
+      info.point = this.pouchPoint();
+      info.power = Math.min(info.power, timeT(holdMs));
+      Game.aim(info);
+      if (info.held) {
+        var t = Game.powerT(info.power);
+        dial.track(Game.BOUNCE_MIN + t * (Game.BOUNCE_MAX - Game.BOUNCE_MIN));
+      }
+    },
+
+    onArm: function (on) {
+      if (on) SFX.arm();
+    },
+
+    onHold: function (ms) { updateCharge(ms); },
+
+    onHoldEnd: function () { endCharge(); },
+
+    onRelease: function () {
+      Game.clearAim();
+    }
+  });
+
+  /* ── HUD ──────────────────────────────────────── */
+
+  var last = { score: 0, wave: 1, shots: 10, time: 60, best: 0 };
+
+  function bump(el) {
+    el.setAttribute('data-bump', '');
+    setTimeout(function () { el.removeAttribute('data-bump'); }, 170);
+  }
+
+  Game.hooks.hud = function (d) {
+    if (d.score !== last.score) { V.score.textContent = comma(d.score); bump(V.score); }
+    if (d.wave !== last.wave) { V.wave.textContent = d.wave; bump(V.wave); }
+    if (d.shots !== last.shots) {
+      V.shots.textContent = d.shots;
+      bump(V.shots);
+      if (d.shots <= 2) V.shots.setAttribute('data-low', '');
+      else V.shots.removeAttribute('data-low');
+    }
+    if (d.time !== last.time) {
+      V.time.textContent = d.time;
+      if (d.time <= 10) V.time.setAttribute('data-low', '');
+      else V.time.removeAttribute('data-low');
+      if (d.time > last.time) bump(V.time);
+    }
+    if (d.best !== last.best) V.best.textContent = comma(d.best);
+    last = { score: d.score, wave: d.wave, shots: d.shots, time: d.time, best: d.best };
+  };
+
+  var MODE_SCREEN = {
+    title: 'title',
+    playing: 'none',
+    wave: 'wave',
+    pause: 'pause',
+    over: 'over'
+  };
+
+  Game.hooks.overlay = function (mode) {
+    overlay.setAttribute('data-show', MODE_SCREEN[mode] || 'none');
+  };
+
+  Game.hooks.waveClear = function (bonus, next) {
+    waveBonus.textContent = '+' + comma(bonus);
+    waveNext.textContent = 'WAVE ' + next;
+  };
+
+  Game.hooks.gameOver = function (score, wave, best, reason) {
+    overScore.textContent = comma(score);
+    overNote.textContent = (reason ? reason + ' · ' : '') + 'WAVE ' + wave + ' · BEST ' + comma(best);
+  };
+
+  var comboTimer = 0;
+  Game.hooks.combo = function (n) {
+    comboVal.textContent = 'x' + n;
+    comboEl.removeAttribute('data-on');
+    /* 리플로우를 강제해 애니메이션을 다시 태운다 */
+    void comboEl.offsetWidth;
+    comboEl.setAttribute('data-on', '');
+    clearTimeout(comboTimer);
+    comboTimer = setTimeout(function () { comboEl.removeAttribute('data-on'); }, 540);
+  };
+
+  /* ── 키보드 ───────────────────────────────────── */
+
+  /* ENTER/SPACE 도 "누르고 있는 시간"이 장전이다 */
+  var keyHold = 0;
+  var keyTimer = 0;
+
+  function keyFireDown() {
+    if (keyHold || sling.disabled) return;
+    SFX.boot();
+    keyHold = performance.now();
+    updateCharge(0);
+    keyTimer = setInterval(function () {
+      updateCharge(performance.now() - keyHold);
+    }, 80);
+  }
+
+  function keyFireUp() {
+    if (!keyHold) return;
+    var held = performance.now() - keyHold;
+    keyHold = 0;
+    clearInterval(keyTimer);
+    sling.fire(0, 1, manualT, held);
+    endCharge();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var k = e.key.toLowerCase();
+
+    if (k === 'm') { SFX.boot(); SFX.toggleMute(); return; }
+    if (k === 'escape') { e.preventDefault(); Game.togglePause(); return; }
+    if (k === 'r') { SFX.boot(); sling.reset(); endCharge(); Game.start(); return; }
+
+    if (k === 'enter' || k === ' ') {
+      /* 다이얼에 포커스가 있으면 방향키/스페이스는 다이얼 몫 */
+      if (document.activeElement === dial.svg && k === ' ') return;
+      e.preventDefault();
+      if (!e.repeat) keyFireDown();
+    }
+  });
+
+  document.addEventListener('keyup', function (e) {
+    var k = e.key.toLowerCase();
+    if (k === 'enter' || k === ' ') keyFireUp();
+  });
+
+  window.addEventListener('blur', function () {
+    if (keyHold) { keyHold = 0; clearInterval(keyTimer); endCharge(); }
+  });
+
+  /* 디버그 훅 */
+  window.RICOCHET = { sling: sling, dial: dial, game: Game };
+
+  /* ── 루프 ─────────────────────────────────────── */
+
+  Game.init(canvas);
+  V.best.textContent = comma(Game.S.best);
+  last.best = Game.S.best;
+
+  var prev = performance.now();
+
+  function frame(now) {
+    var dt = Math.min(1 / 30, (now - prev) / 1000);
+    prev = now;
+
+    if (Game.S.mode !== 'pause') Game.update(dt);
+    Game.draw();
+
+    /* 쏠 수 없는 상태면 패드를 잠근다 (드래그 중에는 건드리지 않는다) */
+    if (!sling.grip && !keyHold) {
+      var can = Game.canFire();
+      if (can === sling.disabled) sling.setDisabled(!can);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+
+  /* ── 리사이즈 ─────────────────────────────────── */
+
+  var rt = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt);
+    rt = setTimeout(function () { Game.resize(); }, 120);
+  });
+  window.addEventListener('orientationchange', function () {
+    setTimeout(function () { Game.resize(); }, 250);
+  });
+
+  /* 캔버스에서의 터치 스크롤/확대 차단 */
+  canvas.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+  /* 탭이 가려지면 일시정지 */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && Game.S.mode === 'playing') Game.togglePause();
+    prev = performance.now();
+  });
+})();
+
+</script>
 </body>
 </html>
