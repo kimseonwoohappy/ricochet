@@ -587,16 +587,19 @@ html, body {
 #buddy-lineup{display:block;width:100%;max-width:340px;height:auto;margin:0 auto 3px}
 .buddy-caption{font-size:11px;color:#72788b;margin:0 0 12px}
 #power{background:#ffffffe6;border:2px solid #fff;border-radius:25px;padding:8px;bottom:80px;box-shadow:0 5px 0 #b3d2e555}.power__cap{font-weight:800;letter-spacing:.06em}
-#next-buddy{position:absolute;right:16px;bottom:94px;width:124px;background:#fffffff0;border:2px solid #fff;border-radius:24px;padding:9px 6px;text-align:center;z-index:4;box-shadow:0 5px 0 #b3d2e555;pointer-events:none}
-#next-buddy .next-label{display:block;font-size:9px;letter-spacing:1px;font-weight:800;color:#65738a}#next-face{display:block;width:62px;height:68px;margin:-2px auto}#next-name{display:block;font-size:12px;font-weight:800;color:#415675}
+#next-buddy{position:absolute;right:16px;bottom:86px;width:152px;background:#fffffff0;border:2px solid #fff;border-radius:24px;padding:9px 8px;text-align:center;z-index:4;box-shadow:0 5px 0 #b3d2e555;pointer-events:none}
+#next-buddy .next-label{display:block;font-size:9px;letter-spacing:1px;font-weight:800;color:#65738a}#next-face{display:block;width:60px;height:66px;margin:-3px auto}#next-name{display:block;font-size:12px;font-weight:800;color:#415675}#next-power{display:block;margin-top:3px;font-size:9px;line-height:1.3;font-weight:800;color:#a24f79}
+.sticker-progress{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:7px}.sticker-dot{width:9px;height:9px;border-radius:50%;background:#cfdae1;border:1px solid #fff;box-shadow:0 1px 0 #9db4c2}.sticker-dot[data-found]{background:var(--dot);transform:scale(1.12)}#sticker-count{margin-left:3px;font-size:9px;color:#65738a}
+.buddy-toast{position:absolute;left:50%;top:92px;transform:translate(-50%,-18px) scale(.92);display:flex;align-items:center;gap:9px;min-width:220px;max-width:calc(100% - 28px);padding:9px 16px 9px 10px;border:3px solid #fff;border-radius:22px;background:#fffaf1f2;box-shadow:0 8px 0 #8db5cd3b,0 16px 40px #5f8ba92b;opacity:0;z-index:8;pointer-events:none;transition:opacity .18s ease,transform .25s cubic-bezier(.2,.8,.2,1)}.buddy-toast[data-show]{opacity:1;transform:translate(-50%,0) scale(1)}#toast-face{width:46px;height:50px;flex:none}.toast-copy{min-width:0}.toast-copy strong,.toast-copy span{display:block}.toast-copy strong{font-size:13px;color:#425676}.toast-copy span{font-size:10px;color:#a24f79;font-weight:800;margin-top:2px}
+.power-burst{position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden}.power-burst i{position:absolute;left:50%;top:50%;width:8px;height:8px;background:var(--c);border-radius:50%;animation:sticker-pop .8s ease-out forwards}@keyframes sticker-pop{to{opacity:0;transform:translate(var(--x),var(--y)) rotate(240deg) scale(.2)}}
 .sling-button__pad{box-shadow:0 5px 0 #9fb8d1,0 9px 18px #789db240;border:3px solid #fff}.sling-button__icon canvas{width:48px;height:54px;display:block}
 #sling-mount::after{content:"당겨서 슝!";position:absolute;white-space:nowrap;left:50%;top:72px;transform:translateX(-50%);font-size:12px;font-weight:800;color:#5b7390;pointer-events:none}
 .play-tools{position:absolute;bottom:max(13px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:7;white-space:nowrap}
 .play-tools button{border:2px solid #fff;border-radius:13px;background:#ffffffde;color:#526681;padding:8px 12px;font:700 11px var(--font);cursor:pointer;box-shadow:0 3px 0 #abcadd66}
 .play-tools button:focus-visible{outline:3px solid #b14e81;outline-offset:3px}.play-tools button:hover{background:#ffeff5}.play-tools button:disabled{opacity:.5;cursor:default}
-@media(max-width:500px){.hud__cell{padding:6px 9px;min-width:48px}.overlay{padding-bottom:235px}.panel{padding:18px 19px;border-radius:26px}.panel__how{font-size:11px;gap:7px}.panel__sub{font-size:12px}.panel__title{font-size:38px}#power{left:10px;padding:5px;bottom:90px}#next-buddy{right:10px;width:96px;bottom:99px}#next-face{width:54px;height:60px}#next-name{font-size:10px}}
+@media(max-width:500px){.hud__cell{padding:6px 8px;min-width:46px}.overlay{padding-bottom:235px}.panel{padding:18px 19px;border-radius:26px}.panel__how{font-size:11px;gap:7px}.panel__sub{font-size:12px}.panel__title{font-size:38px}#power{left:10px;padding:5px;bottom:90px}#next-buddy{right:8px;width:118px;bottom:92px;padding:7px 5px}#next-face{width:49px;height:54px}#next-name{font-size:10px}#next-power{font-size:8px}.sticker-progress{gap:2px}.sticker-dot{width:7px;height:7px}.buddy-toast{top:78px}}
 @media(max-height:660px){.overlay{padding-top:82px;padding-bottom:192px;align-items:start}.panel{padding:12px 18px}.panel__title{font-size:32px}.panel__sub{margin-bottom:5px}#buddy-lineup{max-width:260px}.buddy-caption{display:none}.panel__how{margin:6px auto 9px;font-size:10px;gap:4px}.buddy-kicker{margin:0;font-size:8px}.panel__cue{font-size:11px}}
-@media(max-height:470px){.overlay{padding:76px 145px 8px}.panel{max-height:calc(100svh - 84px);overflow:auto;pointer-events:auto}#buddy-lineup,.buddy-caption,.panel__how{display:none}.panel__sub{margin:10px 0}.panel__cue{font-size:12px}}
+@media(max-height:470px){.overlay{padding:76px 160px 8px}.panel{max-height:calc(100svh - 84px);overflow:auto;pointer-events:auto}#buddy-lineup,.buddy-caption,.panel__how{display:none}.panel__sub{margin:10px 0}.panel__cue{font-size:12px}#next-buddy{bottom:55px}.buddy-toast{top:68px}}
 
 </style>
 </head>
@@ -635,7 +638,8 @@ html, body {
     </div>
 
     <div id="sling-mount"></div>
-    <aside id="next-buddy" aria-label="다음에 발사할 동물 친구"><span class="next-label">NEXT FRIEND</span><canvas id="next-face" width="124" height="136" aria-hidden="true"></canvas><span id="next-name" aria-live="polite">토토 토끼</span></aside>
+    <aside id="next-buddy" aria-label="다음에 발사할 동물 친구"><span class="next-label">NEXT FRIEND</span><canvas id="next-face" width="124" height="136" aria-hidden="true"></canvas><span id="next-name" aria-live="polite">토토 토끼</span><span id="next-power">깡충 파워 · 튕김 +1</span><div id="sticker-progress" class="sticker-progress" aria-label="친구 스티커 0개"><b id="sticker-count">0/8</b></div></aside>
+    <div id="buddy-toast" class="buddy-toast" role="status" aria-live="polite"><canvas id="toast-face" width="92" height="100" aria-hidden="true"></canvas><span class="toast-copy"><strong id="toast-name">토토 토끼 출발!</strong><span id="toast-power">깡충 파워 · 튕김 +1</span></span></div><div id="power-burst" class="power-burst" aria-hidden="true"></div>
     <nav class="play-tools" aria-label="게임 조작"><button id="buddy-pause" type="button">잠깐 쉬기</button><button id="buddy-restart" type="button">다시 놀기</button><button id="buddy-mute" type="button" aria-pressed="false">소리 끄기</button></nav>
 
     <div id="overlay" class="overlay" data-show="title">
@@ -678,14 +682,14 @@ html, body {
 (function (global) {
   'use strict';
   var friends = [
-    {name:'토토 토끼',kind:'bunny',color:'#ffc1d8',trail:'#df5791'},
-    {name:'코코 여우',kind:'fox',color:'#ffb274',trail:'#e27932'},
-    {name:'초롱 개구리',kind:'frog',color:'#97dfae',trail:'#298564'},
-    {name:'밤밤 곰',kind:'bear',color:'#dcb492',trail:'#976345'},
-    {name:'모모 고양이',kind:'cat',color:'#cbb9f6',trail:'#8b65c6'},
-    {name:'피피 펭귄',kind:'penguin',color:'#7aaccf',trail:'#3c719e'},
-    {name:'삐약 병아리',kind:'chick',color:'#ffdc72',trail:'#b7861f'},
-    {name:'포포 판다',kind:'panda',color:'#fffbef',trail:'#6a8a86'}
+    {name:'토토 토끼',kind:'bunny',color:'#ffc1d8',trail:'#df5791',power:'깡충 파워 · 튕김 +1',bounceBonus:1},
+    {name:'코코 여우',kind:'fox',color:'#ffb274',trail:'#e27932',power:'쌩쌩 파워 · 속도 UP',speed:1.15},
+    {name:'초롱 개구리',kind:'frog',color:'#97dfae',trail:'#298564',power:'왕방울 파워 · 몸집 UP',size:1.25},
+    {name:'밤밤 곰',kind:'bear',color:'#dcb492',trail:'#976345',power:'꿀주먹 파워 · 블록 2칸',damage:2},
+    {name:'모모 고양이',kind:'cat',color:'#cbb9f6',trail:'#8b65c6',power:'반짝 파워 · 점수 ×1.5',score:1.5},
+    {name:'피피 펭귄',kind:'penguin',color:'#7aaccf',trail:'#3c719e',power:'둥실 파워 · 천천히 낙하',gravity:.55},
+    {name:'삐약 병아리',kind:'chick',color:'#ffdc72',trail:'#b7861f',power:'째깍 파워 · 시간 +3초',time:3},
+    {name:'포포 판다',kind:'panda',color:'#fffbef',trail:'#6a8a86',power:'방패 파워 · 튕김 1회 무료',shield:1}
   ];
   var sprites = [];
   function paint(ctx, buddy) {
@@ -2274,18 +2278,25 @@ html, body {
 
   function spawnBall(x, y, ux, uy, power, charged) {
     var buddy=nextBuddy();
+    var friend=Buddies.list[buddy];
     S.buddyCursor=(buddy+1)%Buddies.list.length;
     var t = powerT(power);
     var speed = charged ? SPEED_MAX : speedOf(t);
-    var n = charged ? BOUNCE_MAX : bounceOf(t);
+    speed *= friend.speed || 1;
+    var n = (charged ? BOUNCE_MAX : bounceOf(t)) + (friend.bounceBonus || 0);
+    if(friend.time){S.time+=friend.time;floater(x,y-34,'+'+friend.time+'초!',friend.trail);}
     /* 주머니를 화면 밖까지 당겼어도 공은 화면 안에서 출발한다 */
     S.balls.push({
       buddy: buddy,
+      damage: friend.damage || 1,
+      scoreBonus: friend.score || 1,
+      gravityScale: friend.gravity || 1,
+      shield: friend.shield || 0,
       x: clamp(x, BALL_R, S.W - BALL_R),
       y: clamp(y, BALL_R, S.H - 14),
       vx: -ux * speed,
       vy: -uy * speed,
-      r: charged ? BALL_R * 1.9 : BALL_R,
+      r: (charged ? BALL_R * 1.9 : BALL_R) * (friend.size || 1),
       combo: 0,
       age: 0,
       bounce: n,
@@ -2313,7 +2324,7 @@ html, body {
     ball.combo++;
     S.liveCombo = Math.max(S.liveCombo, ball.combo);
     S.bestCombo = Math.max(S.bestCombo, ball.combo);
-    var mult = ball.combo;
+    var mult = ball.combo * ball.scoreBonus;
     var cx = b.x + b.w / 2;
     var cy = b.y + b.h / 2;
     b.flash = 1;
@@ -2334,7 +2345,7 @@ html, body {
       S.shake = Math.max(S.shake, 14);
       S.flash = Math.max(S.flash, 0.5);
     } else {
-      b.hp--;
+      b.hp -= ball.damage;
       if (b.hp <= 0) {
         b.alive = false;
         addScore(50 * b.maxHp * mult, cx, cy, C.hp[b.maxHp - 1]);
@@ -2365,7 +2376,7 @@ html, body {
       o.flash = 1;
       if (o.hp <= 0) {
         o.alive = false;
-        S.score += 40 * Math.max(1, ball.combo);
+        S.score += 40 * Math.max(1, ball.combo) * ball.scoreBonus;
         burst(o.x + o.w / 2, o.y + o.h / 2, C.bomb, 8, 0.8);
       }
     }
@@ -2391,7 +2402,7 @@ html, body {
     for (var j = 0; j < n; j++) {
       var o = alive[j].b;
       o.alive = false;
-      gained += 80 * o.maxHp;
+      gained += 80 * o.maxHp * ball.scoreBonus;
       if (o.type === 'gold') S.shots = Math.min(SHOT_CAP, S.shots + 1);
       burst(o.x + o.w / 2, o.y + o.h / 2, o.type === 'gold' ? C.gold : C.hp[o.maxHp - 1], 10, 1.1);
     }
@@ -2464,7 +2475,7 @@ html, body {
   }
 
   function stepBall(ball, dt) {
-    ball.vy += GRAVITY * dt;
+    ball.vy += GRAVITY * ball.gravityScale * dt;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
@@ -2475,11 +2486,12 @@ html, body {
     var outX = ball.x - ball.r < 0 || ball.x + ball.r > S.W;
     var outY = ball.y - ball.r < 0 || ball.y + ball.r >= S.H;
     if (outX || outY) {
-      if (ball.bounce <= 0) {
+      if (ball.bounce <= 0 && ball.shield <= 0) {
         startFade(ball);
         return;
       }
-      ball.bounce--;
+      if(ball.shield>0){ball.shield--;floater(ball.x,ball.y-24,'방패 통통!',Buddies.list[ball.buddy].trail);}
+      else ball.bounce--;
       var floor = false;
       if (ball.x - ball.r < 0) {
         ball.x = ball.r;
@@ -2542,6 +2554,15 @@ html, body {
     }
     return pts;
   }
+
+  function celebrateWave() {
+    if(S.reduce)return;
+    var colors=['#df5791','#e27932','#298564','#8b65c6','#3c719e','#f1bd3a'];
+    for(var i=0;i<72;i++) {
+      S.parts.push({x:rand(10,S.W-10),y:rand(-30,S.H*.16),vx:rand(-85,85),vy:rand(80,250),life:rand(1.2,2.4),age:0,size:rand(4,9),color:colors[i%colors.length],shape:i%3?'dot':'star',rot:rand(0,Math.PI*2),spin:rand(-8,8)});
+    }
+  }
+
 
   /* ── 루프 ─────────────────────────────────────── */
 
@@ -2622,6 +2643,7 @@ html, body {
         }
         pushHud();
         SFX.clear();
+        celebrateWave();
         S.flash = 0.6;
         S.waveTimer = 1.7;
         setMode('wave');
@@ -2645,6 +2667,7 @@ html, body {
       pt.vy += GRAVITY * 0.55 * dt;
       pt.x += pt.vx * dt;
       pt.y += pt.vy * dt;
+      pt.rot = (pt.rot || 0) + (pt.spin || 0) * dt;
     }
 
     /* 플로터 */
@@ -2738,15 +2761,21 @@ html, body {
   }
 
   function drawParticles(ctx) {
-    for (var i = 0; i < S.parts.length; i++) {
-      var p = S.parts[i];
-      var a = 1 - p.age / p.life;
-      ctx.globalAlpha = a;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    for(var i=0;i<S.parts.length;i++) {
+      var p=S.parts[i],a=1-p.age/p.life;
+      ctx.save();ctx.globalAlpha=a;ctx.fillStyle=p.color;ctx.translate(p.x,p.y);ctx.rotate(p.rot||0);
+      if(p.shape==='star') {
+        ctx.beginPath();
+        for(var q=0;q<10;q++){var ang=-Math.PI/2+q*Math.PI/5,rad=q%2?p.size*.45:p.size;var px=Math.cos(ang)*rad,py=Math.sin(ang)*rad;q?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+        ctx.closePath();ctx.fill();
+      } else if(p.shape==='dot') {
+        ctx.beginPath();ctx.arc(0,0,p.size*.65,0,Math.PI*2);ctx.fill();
+      } else ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
     }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=1;
   }
+
 
   function drawBalls(ctx) {
     for(var i=0;i<S.balls.length;i++) {
@@ -3045,7 +3074,8 @@ html, body {
       SFX.boot();
       info.power = Math.min(info.power, timeT(info.hold));
       info.charged = charged;
-      Game.launch(info);
+      var buddyId=Game.nextBuddy();
+      if(Game.launch(info)){var fresh=discoverBuddy(buddyId);showBuddyPower(buddyId,fresh);refreshBuddy();}
     },
 
     onPull: function (info) {
@@ -3189,16 +3219,51 @@ html, body {
   // Show the exact next character in the sling and the small preview card.
   var nextCanvas=document.getElementById('next-face');
   var nextName=document.getElementById('next-name');
+  var nextPower=document.getElementById('next-power');
+  var stickerProgress=document.getElementById('sticker-progress');
+  var stickerCount=document.getElementById('sticker-count');
+  var toast=document.getElementById('buddy-toast');
+  var toastCanvas=document.getElementById('toast-face');
+  var toastName=document.getElementById('toast-name');
+  var toastPower=document.getElementById('toast-power');
+  var powerBurst=document.getElementById('power-burst');
   var launcherCanvas=document.createElement('canvas');launcherCanvas.width=96;launcherCanvas.height=108;
   launcherCanvas.setAttribute('aria-hidden','true');sling.icon.replaceChildren(launcherCanvas);
   var lineup=document.getElementById('buddy-lineup'),lineupCtx=lineup.getContext('2d');
   Buddies.list.forEach(function(friend,id){Buddies.draw(lineupCtx,id,42+id*85,80,25);});
+  var found=[];
+  try { found=JSON.parse(localStorage.getItem('ricochet_buddy_stickers')||'[]'); } catch(e) { found=[]; }
+  if(!Array.isArray(found))found=[];
+  var stickerDots=Buddies.list.map(function(friend,id){
+    var dot=document.createElement('i');dot.className='sticker-dot';dot.style.setProperty('--dot',friend.color);dot.title=friend.name;stickerProgress.insertBefore(dot,stickerCount);return dot;
+  });
+  function refreshStickers() {
+    stickerDots.forEach(function(dot,id){if(found.indexOf(id)>=0)dot.setAttribute('data-found','');else dot.removeAttribute('data-found');});
+    stickerCount.textContent=found.length+'/'+Buddies.list.length;
+    stickerProgress.setAttribute('aria-label','친구 스티커 '+found.length+'개');
+  }
+  function discoverBuddy(id) {
+    var fresh=found.indexOf(id)<0;
+    if(fresh){found.push(id);found.sort();try{localStorage.setItem('ricochet_buddy_stickers',JSON.stringify(found));}catch(e){}refreshStickers();}
+    return fresh;
+  }
+  var toastTimer=0;
+  function popSparkles(id) {
+    powerBurst.replaceChildren();var colors=[Buddies.list[id].color,'#fff','#f4cd73','#8bdace'];
+    for(var i=0;i<18;i++){var p=document.createElement('i'),a=Math.PI*2*i/18,d=55+(i%4)*16;p.style.setProperty('--c',colors[i%colors.length]);p.style.setProperty('--x',(Math.cos(a)*d)+'px');p.style.setProperty('--y',(Math.sin(a)*d)+'px');powerBurst.appendChild(p);}
+  }
+  function showBuddyPower(id,fresh) {
+    var friend=Buddies.list[id];Buddies.preview(toastCanvas,id,26);
+    toastName.textContent=fresh?friend.name+' 스티커 발견!':friend.name+' 출발!';toastPower.textContent=friend.power;
+    toast.setAttribute('data-show','');popSparkles(id);clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.removeAttribute('data-show');},1650);
+  }
   var shownBuddy=-1;
   function refreshBuddy() {
     var id=Game.nextBuddy();
     if(id===shownBuddy)return;shownBuddy=id;
     Buddies.preview(nextCanvas,id,34);Buddies.preview(launcherCanvas,id,27);
     nextName.textContent=Buddies.list[id].name;
+    nextPower.textContent=Buddies.list[id].power;
     sling.pad.setAttribute('aria-label',Buddies.list[id].name+' 발사');
   }
   var pauseButton=document.getElementById('buddy-pause');
@@ -3219,7 +3284,7 @@ html, body {
   pauseButton.addEventListener('click',pauseBuddies);
   restartButton.addEventListener('click',restartBuddies);
   muteButton.addEventListener('click',muteBuddies);
-  refreshBuddy();refreshTools();
+  refreshStickers();refreshBuddy();refreshTools();
 
   /* ── 루프 ─────────────────────────────────────── */
 
